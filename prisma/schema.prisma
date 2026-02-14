@@ -1,0 +1,82 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}   
+
+enum FlwStepType{
+  Trigger
+  Action
+} 
+
+enum FlwExecutionStatus{
+  Pending
+  Success
+  Failed
+  Running
+}
+
+model Flw{
+  id                          String @id @default(uuid())
+  clerkUserId                 String        
+  name                        String
+  isActive                    Boolean    @default(true)
+  FlwSteps                    FlwSteps[]
+  FlwExecutions                FlwExecutions[]
+  ProcessedEvents             ProcessedEvents[]
+  createdAt                   DateTime   @default(now())
+}
+
+model FlwSteps{
+  id                          String @id @default(uuid())
+  Flw              Flw        @relation(fields: [flwId], references: [id])
+  flwId                       String
+  position                    Int
+  type                        FlwStepType
+  FlwExecutionSteps             FlwExecutionSteps[]
+  integrationKey              String
+  configPayload               Json?
+}
+
+model FlwExecutions{
+  id                          String @id @default(uuid())
+  Flw              Flw        @relation(fields: [flwId], references: [id])
+  flwId                       String
+  lockedBy                    String?                     
+  status                      FlwExecutionStatus
+  FlwExecutionSteps           FlwExecutionSteps[]                        
+  lockedAt                    DateTime?
+  startedAt                   DateTime?
+  finishedAt                  DateTime?
+}
+
+model FlwExecutionSteps {
+  id               String @id @default(uuid())
+  flwExecutionId   String
+  flwStepId        String
+
+  status           FlwExecutionStatus
+  retryCount       Int @default(0)
+
+  error            String?
+
+  startedAt        DateTime?
+  finishedAt       DateTime?
+
+  FlwExecutions    FlwExecutions @relation(fields: [flwExecutionId], references: [id])
+  FlwSteps         FlwSteps @relation(fields: [flwStepId], references: [id])
+}
+
+
+model ProcessedEvents{
+  id                          String @id @default(uuid())
+  eventKey                    String  @unique 
+  Flw              Flw        @relation(fields: [flwId], references: [id])
+  flwId                       String
+  processedAt                 DateTime   @default(now())
+}
+
