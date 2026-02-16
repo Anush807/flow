@@ -23,7 +23,6 @@ async function processStep(stepExecution: string) {
     })
 
     if (!step) return;
-    //checking Idempotency 
     if(step?.status == "Success") return;
 
     const claimed = await prisma.flwExecutionSteps.updateMany({
@@ -35,7 +34,6 @@ async function processStep(stepExecution: string) {
 
         }
     })
-    //Evey kob is claimed
     if(claimed.count == 0){     
         return;
     }
@@ -64,33 +62,8 @@ async function onSuccessFuction(step: { id: string; flwExecutionId: string; flwS
                 finishedAt: new Date(),
             }
         })
+        
     })
-
-    const position = await prisma.flwSteps.findUnique({
-        where:{
-            id: step.flwStepId
-        }
-    })
-    if(!position) return;
-
-    const pos = position?.position + 1;
-
-        const nextStepId = await prisma.flwSteps.update({
-            where:{
-                id: step.flwStepId
-            }, data:{
-                position: pos
-            }
-        })
-        const nextStep = await prisma.flwExecutionSteps.create({
-            data:{
-                flwExecutionId: step.flwExecutionId,
-                status: "Pending",
-                retryCount: 0,
-                flwStepId: step.flwStepId
-            }
-        })
-    
 }
 
 async function failureHandler(step: { id: string; flwExecutionId: string; flwStepId: string; status: FlwExecutionStatus; retryCount: number }, err: any){
