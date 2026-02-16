@@ -34,6 +34,7 @@ model Flw{
 model FlwSteps{
   id                          String @id @default(uuid())
   Flw              Flw        @relation(fields: [flwId], references: [id])
+                              @@unique([flwId, position])
   flwId                       String
   position                    Int
   type                        FlwStepType

@@ -1,13 +1,8 @@
 import { Queue } from "bullmq"
 
-
-const jobQueue = new Queue("jobQueue");
-
-export async function stepQueue(){
-    const response = await jobQueue.add("job", {
-        job: "task 1" 
-    })
-    console.log("Job added to queue", response.id);
-}
-
-
+export const stepQueue = new Queue("step-execution-worker", {
+  connection: {
+    host: "127.0.0.1",
+    port: 6379,
+  },
+});
