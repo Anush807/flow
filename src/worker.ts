@@ -3,7 +3,7 @@ import {prisma} from "../lib/prisma.js"
 import type { FlwExecutionStatus } from "../generated/prisma/client.js";
 import { stepQueue } from "./redis-queue.js";
 
-
+console.log("Worker process started");
 const worker = new Worker("step-execution-worker", async(job) => {
     console.log("worker is running")
     const { stepExecutionId } = job.data;
