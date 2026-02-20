@@ -1,46 +1,44 @@
 import express from "express";
-import { prisma } from "../../lib/prisma.js";
-import { combinedSchema } from "../validations/index.js";
-import { Queue } from "bullmq"
+import { prisma } from "../lib/prisma.js";
+import { combinedSchema } from "./validations/index.js";
+import { stepQueue } from "./redis-queue.js"
 
-const stepQueue = new Queue("step-execution-worker")
-const router = express.Router();
+const router = express.Router(); 
 
 router.post("/createflw", async (req, res) => {
-    try {
-        const { name, nodeType, configPayload } = combinedSchema.parse(req.body);
+  try {
+    const { name, nodeType, configPayload } = combinedSchema.parse(req.body);
 
-        const result = await prisma.$transaction(async (tx) => {
-            const flw = await tx.flw.create({
-                data: {
-                    name,
-                    clerkUserId: "anush",
-                },
-            });
+    const result = await prisma.$transaction(async (tx) => {
+      const flw = await tx.flw.create({
+        data: {
+          name,
+        },
+      });
+      const step = await tx.flwSteps.create({
+        data: {
+          flwId: flw.id,
+          type: nodeType,
+          configPayload,
+          position: 1,
+          integrationKey: "abcdefgh",
+        },
+      });
 
-            const step = await tx.flwSteps.create({
-                data: {
-                    flwId: flw.id,
-                    type: nodeType,
-                    configPayload,
-                    position: 1,
-                    integrationKey: "abcdefgh",
-                },
-            });
+      return { flw, step };
+    });
 
-            return { flw, step };
-        });
+    return res.status(201).json({
+      message: "Flow created successfully",
+      data: result,
+    });
 
-        res.json({
-            message: "Flow created successfully",
-            data: result,
-        });
-
-    } catch (error) {
-        res.status(400).json({
-            message: String(error),
-        });
-    }
+  } catch (error) {
+    return res.status(400).json({
+      message: "Failed to create flow",
+      error: String(error),
+    });
+  }
 });
 
 router.post("/flows/:id/trigger", async (req, res) => {

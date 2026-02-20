@@ -1,7 +1,7 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output = "../generated/prisma"
 }
 
 datasource db {
@@ -12,7 +12,7 @@ enum FlwStepType{
   Trigger
   Action
 } 
-
+  
 enum FlwExecutionStatus{
   Pending
   Success
@@ -22,7 +22,7 @@ enum FlwExecutionStatus{
 
 model Flw{
   id                          String @id @default(uuid())
-  clerkUserId                 String        
+  // clerkUserId                 String        
   name                        String
   isActive                    Boolean    @default(true)
   FlwSteps                    FlwSteps[]

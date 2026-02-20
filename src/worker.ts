@@ -1,11 +1,11 @@
 import { Worker } from "bullmq"
-import { prisma } from "../lib/prisma.js"
-import type { FlwExecutionStatus } from "../generated/prisma/enums.js";
+import {prisma} from "../lib/prisma.js"
+import type { FlwExecutionStatus } from "../generated/prisma/client.js";
 import { stepQueue } from "./redis-queue.js";
 
-const gotJob = () =>  new Promise<void>((res, rej) => setTimeout( () => res(), 1000))
 
 const worker = new Worker("step-execution-worker", async(job) => {
+    console.log("worker is running")
     const { stepExecutionId } = job.data;
     if(!stepExecutionId) return;
     await processStep(stepExecutionId);
