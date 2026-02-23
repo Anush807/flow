@@ -6,15 +6,18 @@ import { stepQueue } from "./redis-queue.js"
 const router = express.Router(); 
 
 router.post("/createflw", async (req, res) => {
+  console.log("Received request to create flow with body:", req.body);
   try {
+    console.log("Validating request body against schema...");
     const { name, nodeType, configPayload } = combinedSchema.parse(req.body);
-
+    console.log("Received request to create flow with data:", { name, nodeType, configPayload }); 
     const result = await prisma.$transaction(async (tx) => {
       const flw = await tx.flw.create({
         data: {
           name,
         },
       });
+      console.log("Flow created with ID:", flw.id);
       const step = await tx.flwSteps.create({
         data: {
           flwId: flw.id,
