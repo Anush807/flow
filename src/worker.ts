@@ -48,62 +48,59 @@ async function processStep(stepExecution: string) {
     }
 }
 
-async function integrationFunction(step: { id: string; flwExecutionId: string; flwStepId: string; status: FlwExecutionStatus; retryCount: number; }) {
-    console.log(`Executing Integeration step ${step.id}`)
+async function integrationFunction(step: { id: string; flwExecutionId: string; flwStepId: string; status: FlwExecutionStatus; retryCount: number }){
+  console.log(`Executing Integration step ${step.id}`)
+  try {
     await new Promise<void>((res) => setTimeout(() => res(), 5000))
+    console.log("Integration function completed successfully")
+  } catch(err) {
+    console.log("Error inside integrationFunction:", err)
+    throw err
+  }
 }
-
 async function onSuccessFuction(step: { id: string; flwExecutionId: string; flwStepId: string; status: FlwExecutionStatus; retryCount: number }) {
-    const result = await prisma.$transaction(async (tx) => {
-        await tx.flwExecutions.update({
-            where: { id: step.flwExecutionId },
-            data: { status: "Success", finishedAt: new Date() }
-        })
-        const current = await tx.flwSteps.findUnique({
-            where: {
-                id: step.flwStepId
-            }
-        })
-        if (!current) throw new Error("Definition step not found");
+  
+  await prisma.flwExecutionSteps.update({
+    where: { id: step.id },
+    data: { status: "Success", finishedAt: new Date() }
+  })
 
-        const nextDefinition = await tx.flwSteps.findUnique({
-            where: {
-                flwId_position: {
-                    flwId: current.flwId,
-                    position: current.position + 1
-                }
-            }
-        })
+  const current = await prisma.flwSteps.findUnique({
+    where: { id: step.flwStepId }
+  })
+  if (!current) throw new Error("Definition step not found");
 
-        if (nextDefinition) {
-            const nextStepExecution = await tx.flwExecutionSteps.create({
-                data: {
-                    flwExecutionId: step.flwExecutionId,
-                    flwStepId: nextDefinition.id,
-                    status: "Pending",
-                    retryCount: 0
-                }
-            })
-            return { nextStepExecution };
-
-        }
-        await tx.flwExecutionSteps.update({
-            where: {
-                id: step.flwExecutionId
-            },
-            data: {
-                status: "Success",
-                finishedAt: new Date()
-            }
-        })
-        return { nextStepExecution: null }
-    })
-
-    if (result.nextStepExecution) {
-        await stepQueue.add("execute-Queue", {
-            stepExecutionId: result.nextStepExecution.id
-        })
+  const nextDefinition = await prisma.flwSteps.findUnique({
+    where: {
+      flwId_position: {
+        flwId: current.flwId,
+        position: current.position + 1
+      }
     }
+  })
+
+  if (nextDefinition) {
+    const nextStepExecution = await prisma.flwExecutionSteps.create({
+      data: {
+        flwExecutionId: step.flwExecutionId,
+        flwStepId: nextDefinition.id,
+        status: "Pending",
+        retryCount: 0
+      }
+    })
+    await stepQueue.add("execute-Queue", {
+      stepExecutionId: nextStepExecution.id
+    })
+    console.log(`✅ Next job added to queue — StepExecutionId: ${nextStepExecution.id}`)  
+    return
+  }
+  console.log(`✅ No next step found — marking execution ${step.flwExecutionId} as complete`)
+  // no next step, mark the whole execution as complete
+  await prisma.flwExecutions.update({
+    where: { id: step.flwExecutionId },
+    data: { status: "Success", finishedAt: new Date() }
+  })
+    console.log(`✅ FlwExecution ${step.flwExecutionId} marked as Success`)
 }
 
 async function failureHandler(step: { id: string; flwExecutionId: string; flwStepId: string; status: FlwExecutionStatus; retryCount: number }, err: any) {

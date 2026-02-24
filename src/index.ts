@@ -7,7 +7,7 @@ const PORT = process.env.PORT;
 
 app.use(express.json());
 
-app.use("/create", creatFlw);
+app.use("/flow", creatFlw);
 
 app.listen(PORT,() => {
     console.log(`App is listening on port ${PORT}`)

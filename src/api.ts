@@ -5,7 +5,7 @@ import { stepQueue } from "./redis-queue.js"
 
 const router = express.Router(); 
 
-router.post("/createflw", async (req, res) => {
+router.post("/create", async (req, res) => {
   console.log("Received request to create flow with body:", req.body);
   try {
     console.log("Validating request body against schema...");
@@ -29,6 +29,8 @@ router.post("/createflw", async (req, res) => {
       });
 
       return { flw, step };
+    },{
+      timeout: 5000, // Set a timeout of 5 seconds for the transaction
     });
 
     return res.status(201).json({
@@ -45,53 +47,53 @@ router.post("/createflw", async (req, res) => {
 });
 
 router.post("/flows/:id/trigger", async (req, res) => {
-    const flwId = String(req.params.id);
-    if (!flwId) return res.json({ message: "flwId not provided" })
-    try {
+  const flwId = String(req.params.id);
+  if (!flwId) return res.json({ message: "flwId not provided" })
 
-        const result = await prisma.$transaction(async (tx) => {
-            const flow = await tx.flw.findUnique({ where: { id: flwId } });
-            if (!flow || !flow.isActive) {
-                throw new Error("Flow not active");
-            }
-            const executionId = await tx.flwExecutions.create({
-                data: {
-                    flwId,
-                    status: "Pending"
-                }
-            })
-            const firstStep = await tx.flwSteps.findFirst({
-                where: {
-                    flwId,
-                    position: 1
-                }
-            });
-            if (!firstStep) {
-                throw new Error("Flow has no steps");
-            }
-            const executionStep = await tx.flwExecutionSteps.create({
-                data: {
-                    flwExecutionId: executionId.id,
-                    status: "Pending",
-                    retryCount: 0,
-                    flwStepId: firstStep.id,
-                }
-            })
-            return { executionStep }
-        })
-
-        await stepQueue.add("execute-step", {
-            stepExecutionId: result.executionStep.id
-        })
-        res.json({
-            message: "jobs added successfully"
-        })
-
-    } catch (error) {
-        return res.json({
-            message: "Error while creating executiom id",
-            error
-        })
+  try {
+    const flow = await prisma.flw.findUnique({ where: { id: flwId } });
+    if (!flow || !flow.isActive) {
+      return res.json({ message: "Flow not active" });
     }
-})
+
+    const executionId = await prisma.flwExecutions.create({
+      data: {
+        flwId,
+        status: "Pending"
+      }
+    });
+
+    const firstStep = await prisma.flwSteps.findFirst({
+      where: {
+        flwId,
+        position: 1
+      }
+    });
+
+    if (!firstStep) {
+      return res.json({ message: "Flow has no steps" });
+    }
+
+    const executionStep = await prisma.flwExecutionSteps.create({
+      data: {
+        flwExecutionId: executionId.id,
+        status: "Pending",
+        retryCount: 0,
+        flwStepId: firstStep.id,
+      }
+    });
+
+    await stepQueue.add("execute-step", {
+      stepExecutionId: executionStep.id
+    });
+
+    res.json({ message: "jobs added successfully" });
+
+  } catch (error) {
+    return res.json({
+      message: "Error while creating execution id",
+      error
+    });
+  }
+});
 export default router;
