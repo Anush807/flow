@@ -95,7 +95,6 @@ async function onSuccessFuction(step: { id: string; flwExecutionId: string; flwS
     return
   }
   console.log(`✅ No next step found — marking execution ${step.flwExecutionId} as complete`)
-  // no next step, mark the whole execution as complete
   await prisma.flwExecutions.update({
     where: { id: step.flwExecutionId },
     data: { status: "Success", finishedAt: new Date() }
