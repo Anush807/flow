@@ -68,6 +68,8 @@ model FlwExecutionSteps {
   startedAt        DateTime?
   finishedAt       DateTime?
 
+  nextRetryAt     DateTime?
+
   FlwExecutions    FlwExecutions @relation(fields: [flwExecutionId], references: [id])
   FlwSteps         FlwSteps @relation(fields: [flwStepId], references: [id])
 }
