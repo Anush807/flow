@@ -102,49 +102,49 @@ async function onSuccessFuction(step: { id: string; flwExecutionId: string; flwS
     console.log(`FlwExecution ${step.flwExecutionId} marked as Success`)
 }
 
-//  async function failureHandler(step: { id: string; flwExecutionId: string; flwStepId: string; status: FlwExecutionStatus; retryCount: number, nextRetryAt: any }, err: any) {
+ async function failureHandler(step: { id: string; flwExecutionId: string; flwStepId: string; status: FlwExecutionStatus; retryCount: number, nextRetryAt: any }, err: any) {
 
-//   const MAX_RETRIES = 5
-//   const BASE_DELAY = 5000
+  const MAX_RETRIES = 5
+  const BASE_DELAY = 5000
 
-//   const retryCount = step.retryCount + 1
+  const retryCount = step.retryCount + 1
 
-//   if (retryCount > MAX_RETRIES) {
+  if (retryCount > MAX_RETRIES) {
 
-//     console.log("Max retries exceeded")
+    console.log("Max retries exceeded")
 
-//     await prisma.flwExecutionSteps.update({
-//       where: { id: step.id },
-//       data: {
-//         status: "Failed",
-//         error: String(err),
-//         finishedAt: new Date()
-//       }
-//     })
+    await prisma.flwExecutionSteps.update({
+      where: { id: step.id },
+      data: {
+        status: "Failed",
+        error: String(err),
+        finishedAt: new Date()
+      }
+    })
 
-//     await prisma.flwExecutions.update({
-//       where: { id: step.flwExecutionId },
-//       data: {
-//         status: "Failed"
-//       }
-//     })
+    await prisma.flwExecutions.update({
+      where: { id: step.flwExecutionId },
+      data: {
+        status: "Failed"
+      }
+    })
 
-//     return
-//   }
+    return
+  }
 
-//   const delay = BASE_DELAY * Math.pow(2, step.retryCount)
+  const delay = BASE_DELAY * Math.pow(2, step.retryCount)
 
-//   const nextRetryAt = new Date(Date.now() + delay)
+  const nextRetryAt = new Date(Date.now() + delay)
 
-//   await prisma.flwExecutionSteps.update({
-//     where: { id: step.id },
-//     data: {
-//       status: "Pending",
-//       retryCount: retryCount,
-//       nextRetryAt,
-//       error: String(err)
-//     }
-//   })
+  await prisma.flwExecutionSteps.update({
+    where: { id: step.id },
+    data: {
+      status: "Pending",
+      retryCount: retryCount,
+      nextRetryAt,
+      error: String(err)
+    }
+  })
 
-//   console.log(`Retry scheduled in ${delay/1000}s`)
-// }
+  console.log(`Retry scheduled in ${delay/1000}s`)
+}

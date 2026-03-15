@@ -14,6 +14,9 @@ async function recoveryLoop() {
   const pendingSteps = await prisma.flwExecutionSteps.findMany({
     where: {
       status: "Pending" ,
+      nextRetryAt:{
+        lte: new Date()
+      }
     },
     take: 50
   });
