@@ -36,11 +36,14 @@ model FlwSteps{
   Flw              Flw        @relation(fields: [flwId], references: [id])
                               @@unique([flwId, position])
   flwId                       String
+  name                        String?
   position                    Int
   type                        FlwStepType
   FlwExecutionSteps             FlwExecutionSteps[]
   integrationKey              String
+  operationKey                String?
   configPayload               Json?
+  inputMapping                Json?
 }
 
 model FlwExecutions{
@@ -51,6 +54,8 @@ model FlwExecutions{
   status                      FlwExecutionStatus
   FlwExecutionSteps           FlwExecutionSteps[]                        
   lockedAt                    DateTime?
+  triggerPayload              Json?
+  triggeredAt                 DateTime   @default(now())
   startedAt                   DateTime?
   finishedAt                  DateTime?
 }
@@ -64,6 +69,9 @@ model FlwExecutionSteps {
   retryCount       Int @default(0)
 
   error            String?
+  outputPayload    Json?
+  errorPayload     Json?
+  idempotencyKey   String?
 
   startedAt        DateTime?
   finishedAt       DateTime?
@@ -82,4 +90,3 @@ model ProcessedEvents{
   flwId                       String
   processedAt                 DateTime   @default(now())
 }
-
