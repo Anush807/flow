@@ -1,6 +1,9 @@
 import express from "express";
 import "dotenv/config"
 import creatFlw from "./api.js"
+import dns from "dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 const app = express();
 const PORT = process.env.PORT;

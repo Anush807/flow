@@ -28,6 +28,7 @@
     "@types/redis": "^4.0.10",
     "bullmq": "^5.68.0",
     "connect-redis": "^9.0.0",
+    "dns": "^0.2.2",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
