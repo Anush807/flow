@@ -65,9 +65,30 @@ async function processStep(stepExecutionId) {
         console.log(`Step ${stepExecutionId} already claimed or not found – skipping`);
         return;
     }
+    const definition = await getStepDefinition(step.flwStepId);
+    const context = await buildStepContext(step);
+    const flowConditionsResult = definition.position === 1
+        ? await evaluateFlowConditions(definition.flwId, context)
+        : { matched: true, evaluated: 0 };
+    if (!flowConditionsResult.matched) {
+        await stopExecutionByCondition(step, {
+            scope: "flow",
+            evaluated: flowConditionsResult.evaluated,
+        });
+        return;
+    }
+    const stepConditionsResult = evaluateConditions(definition.FlwConditions, context);
+    if (!stepConditionsResult.matched) {
+        await onSuccessFunction(step, {
+            skipped: true,
+            reason: "step_conditions_not_met",
+            evaluatedConditions: stepConditionsResult.evaluated,
+        });
+        return;
+    }
     let outputPayload;
     try {
-        outputPayload = await runIntegration(step);
+        outputPayload = await runIntegration(definition, context);
     }
     catch (err) {
         await failureHandler(step, err);
@@ -110,6 +131,22 @@ async function claimStep(stepExecutionId) {
         },
     });
     return step;
+}
+async function getStepDefinition(flwStepId) {
+    const definition = await prisma.flwSteps.findUnique({
+        where: { id: flwStepId },
+        include: {
+            FlwConditions: {
+                orderBy: {
+                    position: "asc",
+                },
+            },
+        },
+    });
+    if (!definition) {
+        throw new Error(`Step definition not found for flwStepId: ${flwStepId}`);
+    }
+    return definition;
 }
 // ----------------------------------------------------------------
 // Context builder
@@ -181,23 +218,120 @@ function resolveInputMapping(value, context) {
     }
     return value;
 }
+function evaluateSingleCondition(condition, context) {
+    const sourcePayload = condition.sourceType === "Trigger"
+        ? context.triggerPayload
+        : context.previousSteps.find((entry) => entry.stepId === condition.sourceStepId)?.outputPayload;
+    const actualValue = resolvePath(sourcePayload, condition.fieldPath.split("."));
+    const expectedValue = condition.comparisonValue === null || condition.comparisonValue === undefined
+        ? undefined
+        : condition.comparisonValue;
+    switch (condition.operator) {
+        case "Equals":
+            return actualValue === expectedValue;
+        case "NotEquals":
+            return actualValue !== expectedValue;
+        case "Contains":
+            if (typeof actualValue === "string" && typeof expectedValue === "string") {
+                return actualValue.includes(expectedValue);
+            }
+            if (Array.isArray(actualValue)) {
+                return actualValue.includes(expectedValue);
+            }
+            return false;
+        case "NotContains":
+            if (typeof actualValue === "string" && typeof expectedValue === "string") {
+                return !actualValue.includes(expectedValue);
+            }
+            if (Array.isArray(actualValue)) {
+                return !actualValue.includes(expectedValue);
+            }
+            return true;
+        case "GreaterThan":
+            return Number(actualValue) > Number(expectedValue);
+        case "LessThan":
+            return Number(actualValue) < Number(expectedValue);
+        case "Exists":
+            return actualValue !== undefined && actualValue !== null;
+        case "NotExists":
+            return actualValue === undefined || actualValue === null;
+        default: {
+            const operator = condition.operator;
+            throw new Error(`Unsupported condition operator: ${operator}`);
+        }
+    }
+}
+function combineConditionResults(accumulator, nextResult, logicGate) {
+    if (logicGate === "Or") {
+        return accumulator || nextResult;
+    }
+    return accumulator && nextResult;
+}
+function evaluateConditions(conditions, context) {
+    if (conditions.length === 0) {
+        return { matched: true, evaluated: 0 };
+    }
+    const [firstCondition, ...restConditions] = conditions;
+    if (!firstCondition) {
+        return { matched: true, evaluated: 0 };
+    }
+    let matched = evaluateSingleCondition(firstCondition, context);
+    for (const condition of restConditions) {
+        matched = combineConditionResults(matched, evaluateSingleCondition(condition, context), condition.logicGate);
+    }
+    return {
+        matched,
+        evaluated: conditions.length,
+    };
+}
+async function evaluateFlowConditions(flwId, context) {
+    const flowConditions = await prisma.flwConditions.findMany({
+        where: {
+            flwId,
+            flwStepId: null,
+        },
+        orderBy: {
+            position: "asc",
+        },
+    });
+    return evaluateConditions(flowConditions, context);
+}
 // ----------------------------------------------------------------
 // Integration runner  (replaces the stub integrationFunction)
 // ----------------------------------------------------------------
-async function runIntegration(step) {
-    const definition = await prisma.flwSteps.findUnique({
-        where: { id: step.flwStepId },
-    });
-    if (!definition) {
-        throw new Error(`Step definition not found for flwStepId: ${step.flwStepId}`);
-    }
+async function runIntegration(definition, context) {
     if (!definition.operationKey) {
-        throw new Error(`Step operation not found for flwStepId: ${step.flwStepId}`);
+        throw new Error(`Step operation not found for flwStepId: ${definition.id}`);
     }
-    const context = await buildStepContext(step);
     const resolvedInput = resolveInputMapping(definition.inputMapping, context);
     const result = await executeIntegration(definition.integrationKey, definition.operationKey, resolvedInput);
     return result.outputPayload;
+}
+async function stopExecutionByCondition(step, details) {
+    await prisma.$transaction(async (tx) => {
+        await tx.flwExecutionSteps.update({
+            where: { id: step.id },
+            data: {
+                status: "Success",
+                outputPayload: toJsonValue({
+                    skipped: true,
+                    reason: `${details.scope}_conditions_not_met`,
+                    evaluatedConditions: details.evaluated,
+                }),
+                error: null,
+                errorPayload: Prisma.JsonNull,
+                finishedAt: new Date(),
+            },
+        });
+        await tx.flwExecutions.update({
+            where: { id: step.flwExecutionId },
+            data: {
+                status: "Success",
+                finishedAt: new Date(),
+            },
+        });
+    });
+    console.log(`Execution ${step.flwExecutionId} stopped because ${details.scope} conditions were not met`);
 }
 // ----------------------------------------------------------------
 // Success handler – marks step done, chains next step or closes execution

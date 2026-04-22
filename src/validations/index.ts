@@ -1,6 +1,36 @@
 import { z } from "zod";
 
 const flowStatusSchema = z.enum(["Draft", "Active", "Paused", "Archived"]);
+const conditionSourceTypeSchema = z.enum(["Trigger", "StepOutput"]);
+const conditionOperatorSchema = z.enum([
+  "Equals",
+  "NotEquals",
+  "Contains",
+  "NotContains",
+  "GreaterThan",
+  "LessThan",
+  "Exists",
+  "NotExists",
+]);
+const conditionLogicGateSchema = z.enum(["And", "Or"]);
+
+export const flowConditionSchema = z
+  .object({
+    sourceType: conditionSourceTypeSchema,
+    sourceStepPosition: z.number().int().positive().optional(),
+    fieldPath: z.string().min(1),
+    operator: conditionOperatorSchema,
+    comparisonValue: z.unknown().optional(),
+    logicGate: conditionLogicGateSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.sourceType === "StepOutput" && value.sourceStepPosition === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "sourceStepPosition is required when sourceType is StepOutput",
+      });
+    }
+  });
 
 export const flowStepSchema = z.object({
   name: z.string().min(1).optional(),
@@ -9,6 +39,7 @@ export const flowStepSchema = z.object({
   operationKey: z.string().min(1).optional(),
   configPayload: z.unknown().optional(),
   inputMapping: z.unknown().optional(),
+  conditions: z.array(flowConditionSchema).optional(),
 });
 
 export const createFlowSchema = z
@@ -17,6 +48,7 @@ export const createFlowSchema = z
     status: flowStatusSchema.optional(),
     eventKey: z.string().min(1).optional(),
     webhookKey: z.string().min(1).optional(),
+    conditions: z.array(flowConditionSchema).optional(),
     steps: z.array(flowStepSchema).min(1).optional(),
     nodeType: z.enum(["Trigger", "Action"]).optional(),
     configPayload: z.unknown().optional(),
@@ -36,6 +68,7 @@ export const updateFlowSchema = z
     status: flowStatusSchema.optional(),
     eventKey: z.string().min(1).nullable().optional(),
     webhookKey: z.string().min(1).nullable().optional(),
+    conditions: z.array(flowConditionSchema).optional(),
     steps: z.array(flowStepSchema).min(1).optional(),
   })
   .refine(
@@ -44,6 +77,7 @@ export const updateFlowSchema = z
       value.status !== undefined ||
       value.eventKey !== undefined ||
       value.webhookKey !== undefined ||
+      value.conditions !== undefined ||
       value.steps !== undefined,
     {
       message: "At least one field must be provided for update",

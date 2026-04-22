@@ -156,6 +156,17 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
         omit: OmitOpts;
     }>;
     /**
+     * `prisma.flwConditions`: Exposes CRUD operations for the **FlwConditions** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more FlwConditions
+      * const flwConditions = await prisma.flwConditions.findMany()
+      * ```
+      */
+    get flwConditions(): Prisma.FlwConditionsDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
      * `prisma.processedEvents`: Exposes CRUD operations for the **ProcessedEvents** model.
       * Example usage:
       * ```ts

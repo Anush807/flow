@@ -220,6 +220,51 @@ export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
     _min?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>;
     _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>;
 };
+export type EnumFlwConditionSourceTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionSourceType | Prisma.EnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionSourceType[] | Prisma.ListEnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionSourceType[] | Prisma.ListEnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionSourceTypeFilter<$PrismaModel> | $Enums.FlwConditionSourceType;
+};
+export type EnumFlwConditionOperatorFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionOperator | Prisma.EnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionOperator[] | Prisma.ListEnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionOperator[] | Prisma.ListEnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionOperatorFilter<$PrismaModel> | $Enums.FlwConditionOperator;
+};
+export type EnumFlwConditionLogicGateFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionLogicGate | Prisma.EnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionLogicGate[] | Prisma.ListEnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionLogicGate[] | Prisma.ListEnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionLogicGateFilter<$PrismaModel> | $Enums.FlwConditionLogicGate;
+};
+export type EnumFlwConditionSourceTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionSourceType | Prisma.EnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionSourceType[] | Prisma.ListEnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionSourceType[] | Prisma.ListEnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionSourceTypeWithAggregatesFilter<$PrismaModel> | $Enums.FlwConditionSourceType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumFlwConditionSourceTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumFlwConditionSourceTypeFilter<$PrismaModel>;
+};
+export type EnumFlwConditionOperatorWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionOperator | Prisma.EnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionOperator[] | Prisma.ListEnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionOperator[] | Prisma.ListEnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionOperatorWithAggregatesFilter<$PrismaModel> | $Enums.FlwConditionOperator;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumFlwConditionOperatorFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumFlwConditionOperatorFilter<$PrismaModel>;
+};
+export type EnumFlwConditionLogicGateWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionLogicGate | Prisma.EnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionLogicGate[] | Prisma.ListEnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionLogicGate[] | Prisma.ListEnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionLogicGateWithAggregatesFilter<$PrismaModel> | $Enums.FlwConditionLogicGate;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumFlwConditionLogicGateFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumFlwConditionLogicGateFilter<$PrismaModel>;
+};
 export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | Prisma.StringFieldRefInput<$PrismaModel>;
     in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>;
@@ -430,5 +475,50 @@ export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
     _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
     _min?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>;
     _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>;
+};
+export type NestedEnumFlwConditionSourceTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionSourceType | Prisma.EnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionSourceType[] | Prisma.ListEnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionSourceType[] | Prisma.ListEnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionSourceTypeFilter<$PrismaModel> | $Enums.FlwConditionSourceType;
+};
+export type NestedEnumFlwConditionOperatorFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionOperator | Prisma.EnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionOperator[] | Prisma.ListEnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionOperator[] | Prisma.ListEnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionOperatorFilter<$PrismaModel> | $Enums.FlwConditionOperator;
+};
+export type NestedEnumFlwConditionLogicGateFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionLogicGate | Prisma.EnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionLogicGate[] | Prisma.ListEnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionLogicGate[] | Prisma.ListEnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionLogicGateFilter<$PrismaModel> | $Enums.FlwConditionLogicGate;
+};
+export type NestedEnumFlwConditionSourceTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionSourceType | Prisma.EnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionSourceType[] | Prisma.ListEnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionSourceType[] | Prisma.ListEnumFlwConditionSourceTypeFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionSourceTypeWithAggregatesFilter<$PrismaModel> | $Enums.FlwConditionSourceType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumFlwConditionSourceTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumFlwConditionSourceTypeFilter<$PrismaModel>;
+};
+export type NestedEnumFlwConditionOperatorWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionOperator | Prisma.EnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionOperator[] | Prisma.ListEnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionOperator[] | Prisma.ListEnumFlwConditionOperatorFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionOperatorWithAggregatesFilter<$PrismaModel> | $Enums.FlwConditionOperator;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumFlwConditionOperatorFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumFlwConditionOperatorFilter<$PrismaModel>;
+};
+export type NestedEnumFlwConditionLogicGateWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FlwConditionLogicGate | Prisma.EnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    in?: $Enums.FlwConditionLogicGate[] | Prisma.ListEnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.FlwConditionLogicGate[] | Prisma.ListEnumFlwConditionLogicGateFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumFlwConditionLogicGateWithAggregatesFilter<$PrismaModel> | $Enums.FlwConditionLogicGate;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumFlwConditionLogicGateFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumFlwConditionLogicGateFilter<$PrismaModel>;
 };
 //# sourceMappingURL=commonInputTypes.d.ts.map

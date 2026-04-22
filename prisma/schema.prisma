@@ -27,12 +27,34 @@ enum FlwExecutionStatus{
   Running
 }
 
+enum FlwConditionSourceType{
+  Trigger
+  StepOutput
+}
+
+enum FlwConditionOperator{
+  Equals
+  NotEquals
+  Contains
+  NotContains
+  GreaterThan
+  LessThan
+  Exists
+  NotExists
+}
+
+enum FlwConditionLogicGate{
+  And
+  Or
+}
+
 model Flw{
   id                          String @id @default(uuid())        
   name                        String
   eventKey                    String?   @unique
   webhookKey                  String? @unique  
   FlwSteps                    FlwSteps[]
+  FlwConditions               FlwConditions[]
   FlwExecutions               FlwExecutions[]
   ProcessedEvents             ProcessedEvents[]
   status                      FlwStatus @default(Draft)
@@ -48,6 +70,7 @@ model FlwSteps{
   position                    Int
   type                        FlwStepType
   FlwExecutionSteps           FlwExecutionSteps[]
+  FlwConditions               FlwConditions[]
   integrationKey              String
   operationKey                String?
   configPayload               Json?
@@ -92,6 +115,22 @@ model FlwExecutionSteps {
   FlwSteps         FlwSteps @relation(fields: [flwStepId], references: [id])
 }
 
+model FlwConditions{
+  id                          String @id @default(uuid())
+  Flw                         Flw @relation(fields: [flwId], references: [id])
+  flwId                       String
+  FlwSteps                    FlwSteps? @relation(fields: [flwStepId], references: [id])
+  flwStepId                   String?
+  sourceType                  FlwConditionSourceType
+  sourceStepId                String?
+  fieldPath                   String
+  operator                    FlwConditionOperator
+  comparisonValue             Json?
+  logicGate                   FlwConditionLogicGate @default(And)
+  position                    Int
+
+  @@index([flwId, flwStepId, position])
+}
 
 model ProcessedEvents{
   id                          String @id @default(uuid())

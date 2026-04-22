@@ -23,4 +23,22 @@ export const FlwExecutionStatus = {
     Failed: 'Failed',
     Running: 'Running'
 };
+export const FlwConditionSourceType = {
+    Trigger: 'Trigger',
+    StepOutput: 'StepOutput'
+};
+export const FlwConditionOperator = {
+    Equals: 'Equals',
+    NotEquals: 'NotEquals',
+    Contains: 'Contains',
+    NotContains: 'NotContains',
+    GreaterThan: 'GreaterThan',
+    LessThan: 'LessThan',
+    Exists: 'Exists',
+    NotExists: 'NotExists'
+};
+export const FlwConditionLogicGate = {
+    And: 'And',
+    Or: 'Or'
+};
 //# sourceMappingURL=enums.js.map

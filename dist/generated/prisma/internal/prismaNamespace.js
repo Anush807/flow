@@ -72,6 +72,7 @@ export const ModelName = {
     FlwSteps: 'FlwSteps',
     FlwExecutions: 'FlwExecutions',
     FlwExecutionSteps: 'FlwExecutionSteps',
+    FlwConditions: 'FlwConditions',
     ProcessedEvents: 'ProcessedEvents'
 };
 /**
@@ -127,6 +128,18 @@ export const FlwExecutionStepsScalarFieldEnum = {
     startedAt: 'startedAt',
     finishedAt: 'finishedAt',
     nextRetryAt: 'nextRetryAt'
+};
+export const FlwConditionsScalarFieldEnum = {
+    id: 'id',
+    flwId: 'flwId',
+    flwStepId: 'flwStepId',
+    sourceType: 'sourceType',
+    sourceStepId: 'sourceStepId',
+    fieldPath: 'fieldPath',
+    operator: 'operator',
+    comparisonValue: 'comparisonValue',
+    logicGate: 'logicGate',
+    position: 'position'
 };
 export const ProcessedEventsScalarFieldEnum = {
     id: 'id',

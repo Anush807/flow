@@ -195,6 +195,7 @@ export type FlwStepsWhereInput = {
     inputMapping?: Prisma.JsonNullableFilter<"FlwSteps">;
     Flw?: Prisma.XOR<Prisma.FlwScalarRelationFilter, Prisma.FlwWhereInput>;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsListRelationFilter;
+    FlwConditions?: Prisma.FlwConditionsListRelationFilter;
 };
 export type FlwStepsOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -208,6 +209,7 @@ export type FlwStepsOrderByWithRelationInput = {
     inputMapping?: Prisma.SortOrderInput | Prisma.SortOrder;
     Flw?: Prisma.FlwOrderByWithRelationInput;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsOrderByRelationAggregateInput;
+    FlwConditions?: Prisma.FlwConditionsOrderByRelationAggregateInput;
 };
 export type FlwStepsWhereUniqueInput = Prisma.AtLeast<{
     id?: string;
@@ -225,6 +227,7 @@ export type FlwStepsWhereUniqueInput = Prisma.AtLeast<{
     inputMapping?: Prisma.JsonNullableFilter<"FlwSteps">;
     Flw?: Prisma.XOR<Prisma.FlwScalarRelationFilter, Prisma.FlwWhereInput>;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsListRelationFilter;
+    FlwConditions?: Prisma.FlwConditionsListRelationFilter;
 }, "id" | "flwId_position">;
 export type FlwStepsOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
@@ -267,6 +270,7 @@ export type FlwStepsCreateInput = {
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     Flw: Prisma.FlwCreateNestedOneWithoutFlwStepsInput;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsCreateNestedManyWithoutFlwStepsInput;
+    FlwConditions?: Prisma.FlwConditionsCreateNestedManyWithoutFlwStepsInput;
 };
 export type FlwStepsUncheckedCreateInput = {
     id?: string;
@@ -279,6 +283,7 @@ export type FlwStepsUncheckedCreateInput = {
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedCreateNestedManyWithoutFlwStepsInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedCreateNestedManyWithoutFlwStepsInput;
 };
 export type FlwStepsUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -291,6 +296,7 @@ export type FlwStepsUpdateInput = {
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     Flw?: Prisma.FlwUpdateOneRequiredWithoutFlwStepsNestedInput;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUpdateManyWithoutFlwStepsNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUpdateManyWithoutFlwStepsNestedInput;
 };
 export type FlwStepsUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -303,6 +309,7 @@ export type FlwStepsUncheckedUpdateInput = {
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedUpdateManyWithoutFlwStepsNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedUpdateManyWithoutFlwStepsNestedInput;
 };
 export type FlwStepsCreateManyInput = {
     id?: string;
@@ -387,6 +394,10 @@ export type FlwStepsScalarRelationFilter = {
     is?: Prisma.FlwStepsWhereInput;
     isNot?: Prisma.FlwStepsWhereInput;
 };
+export type FlwStepsNullableScalarRelationFilter = {
+    is?: Prisma.FlwStepsWhereInput | null;
+    isNot?: Prisma.FlwStepsWhereInput | null;
+};
 export type FlwStepsCreateNestedManyWithoutFlwInput = {
     create?: Prisma.XOR<Prisma.FlwStepsCreateWithoutFlwInput, Prisma.FlwStepsUncheckedCreateWithoutFlwInput> | Prisma.FlwStepsCreateWithoutFlwInput[] | Prisma.FlwStepsUncheckedCreateWithoutFlwInput[];
     connectOrCreate?: Prisma.FlwStepsCreateOrConnectWithoutFlwInput | Prisma.FlwStepsCreateOrConnectWithoutFlwInput[];
@@ -447,6 +458,20 @@ export type FlwStepsUpdateOneRequiredWithoutFlwExecutionStepsNestedInput = {
     connect?: Prisma.FlwStepsWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.FlwStepsUpdateToOneWithWhereWithoutFlwExecutionStepsInput, Prisma.FlwStepsUpdateWithoutFlwExecutionStepsInput>, Prisma.FlwStepsUncheckedUpdateWithoutFlwExecutionStepsInput>;
 };
+export type FlwStepsCreateNestedOneWithoutFlwConditionsInput = {
+    create?: Prisma.XOR<Prisma.FlwStepsCreateWithoutFlwConditionsInput, Prisma.FlwStepsUncheckedCreateWithoutFlwConditionsInput>;
+    connectOrCreate?: Prisma.FlwStepsCreateOrConnectWithoutFlwConditionsInput;
+    connect?: Prisma.FlwStepsWhereUniqueInput;
+};
+export type FlwStepsUpdateOneWithoutFlwConditionsNestedInput = {
+    create?: Prisma.XOR<Prisma.FlwStepsCreateWithoutFlwConditionsInput, Prisma.FlwStepsUncheckedCreateWithoutFlwConditionsInput>;
+    connectOrCreate?: Prisma.FlwStepsCreateOrConnectWithoutFlwConditionsInput;
+    upsert?: Prisma.FlwStepsUpsertWithoutFlwConditionsInput;
+    disconnect?: Prisma.FlwStepsWhereInput | boolean;
+    delete?: Prisma.FlwStepsWhereInput | boolean;
+    connect?: Prisma.FlwStepsWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.FlwStepsUpdateToOneWithWhereWithoutFlwConditionsInput, Prisma.FlwStepsUpdateWithoutFlwConditionsInput>, Prisma.FlwStepsUncheckedUpdateWithoutFlwConditionsInput>;
+};
 export type FlwStepsCreateWithoutFlwInput = {
     id?: string;
     name?: string | null;
@@ -457,6 +482,7 @@ export type FlwStepsCreateWithoutFlwInput = {
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsCreateNestedManyWithoutFlwStepsInput;
+    FlwConditions?: Prisma.FlwConditionsCreateNestedManyWithoutFlwStepsInput;
 };
 export type FlwStepsUncheckedCreateWithoutFlwInput = {
     id?: string;
@@ -468,6 +494,7 @@ export type FlwStepsUncheckedCreateWithoutFlwInput = {
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedCreateNestedManyWithoutFlwStepsInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedCreateNestedManyWithoutFlwStepsInput;
 };
 export type FlwStepsCreateOrConnectWithoutFlwInput = {
     where: Prisma.FlwStepsWhereUniqueInput;
@@ -514,6 +541,7 @@ export type FlwStepsCreateWithoutFlwExecutionStepsInput = {
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     Flw: Prisma.FlwCreateNestedOneWithoutFlwStepsInput;
+    FlwConditions?: Prisma.FlwConditionsCreateNestedManyWithoutFlwStepsInput;
 };
 export type FlwStepsUncheckedCreateWithoutFlwExecutionStepsInput = {
     id?: string;
@@ -525,6 +553,7 @@ export type FlwStepsUncheckedCreateWithoutFlwExecutionStepsInput = {
     operationKey?: string | null;
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    FlwConditions?: Prisma.FlwConditionsUncheckedCreateNestedManyWithoutFlwStepsInput;
 };
 export type FlwStepsCreateOrConnectWithoutFlwExecutionStepsInput = {
     where: Prisma.FlwStepsWhereUniqueInput;
@@ -549,6 +578,7 @@ export type FlwStepsUpdateWithoutFlwExecutionStepsInput = {
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     Flw?: Prisma.FlwUpdateOneRequiredWithoutFlwStepsNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUpdateManyWithoutFlwStepsNestedInput;
 };
 export type FlwStepsUncheckedUpdateWithoutFlwExecutionStepsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -560,6 +590,68 @@ export type FlwStepsUncheckedUpdateWithoutFlwExecutionStepsInput = {
     operationKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    FlwConditions?: Prisma.FlwConditionsUncheckedUpdateManyWithoutFlwStepsNestedInput;
+};
+export type FlwStepsCreateWithoutFlwConditionsInput = {
+    id?: string;
+    name?: string | null;
+    position: number;
+    type: $Enums.FlwStepType;
+    integrationKey: string;
+    operationKey?: string | null;
+    configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    Flw: Prisma.FlwCreateNestedOneWithoutFlwStepsInput;
+    FlwExecutionSteps?: Prisma.FlwExecutionStepsCreateNestedManyWithoutFlwStepsInput;
+};
+export type FlwStepsUncheckedCreateWithoutFlwConditionsInput = {
+    id?: string;
+    flwId: string;
+    name?: string | null;
+    position: number;
+    type: $Enums.FlwStepType;
+    integrationKey: string;
+    operationKey?: string | null;
+    configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedCreateNestedManyWithoutFlwStepsInput;
+};
+export type FlwStepsCreateOrConnectWithoutFlwConditionsInput = {
+    where: Prisma.FlwStepsWhereUniqueInput;
+    create: Prisma.XOR<Prisma.FlwStepsCreateWithoutFlwConditionsInput, Prisma.FlwStepsUncheckedCreateWithoutFlwConditionsInput>;
+};
+export type FlwStepsUpsertWithoutFlwConditionsInput = {
+    update: Prisma.XOR<Prisma.FlwStepsUpdateWithoutFlwConditionsInput, Prisma.FlwStepsUncheckedUpdateWithoutFlwConditionsInput>;
+    create: Prisma.XOR<Prisma.FlwStepsCreateWithoutFlwConditionsInput, Prisma.FlwStepsUncheckedCreateWithoutFlwConditionsInput>;
+    where?: Prisma.FlwStepsWhereInput;
+};
+export type FlwStepsUpdateToOneWithWhereWithoutFlwConditionsInput = {
+    where?: Prisma.FlwStepsWhereInput;
+    data: Prisma.XOR<Prisma.FlwStepsUpdateWithoutFlwConditionsInput, Prisma.FlwStepsUncheckedUpdateWithoutFlwConditionsInput>;
+};
+export type FlwStepsUpdateWithoutFlwConditionsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    position?: Prisma.IntFieldUpdateOperationsInput | number;
+    type?: Prisma.EnumFlwStepTypeFieldUpdateOperationsInput | $Enums.FlwStepType;
+    integrationKey?: Prisma.StringFieldUpdateOperationsInput | string;
+    operationKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    Flw?: Prisma.FlwUpdateOneRequiredWithoutFlwStepsNestedInput;
+    FlwExecutionSteps?: Prisma.FlwExecutionStepsUpdateManyWithoutFlwStepsNestedInput;
+};
+export type FlwStepsUncheckedUpdateWithoutFlwConditionsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    flwId?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    position?: Prisma.IntFieldUpdateOperationsInput | number;
+    type?: Prisma.EnumFlwStepTypeFieldUpdateOperationsInput | $Enums.FlwStepType;
+    integrationKey?: Prisma.StringFieldUpdateOperationsInput | string;
+    operationKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedUpdateManyWithoutFlwStepsNestedInput;
 };
 export type FlwStepsCreateManyFlwInput = {
     id?: string;
@@ -581,6 +673,7 @@ export type FlwStepsUpdateWithoutFlwInput = {
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUpdateManyWithoutFlwStepsNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUpdateManyWithoutFlwStepsNestedInput;
 };
 export type FlwStepsUncheckedUpdateWithoutFlwInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -592,6 +685,7 @@ export type FlwStepsUncheckedUpdateWithoutFlwInput = {
     configPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     inputMapping?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedUpdateManyWithoutFlwStepsNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedUpdateManyWithoutFlwStepsNestedInput;
 };
 export type FlwStepsUncheckedUpdateManyWithoutFlwInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -608,9 +702,11 @@ export type FlwStepsUncheckedUpdateManyWithoutFlwInput = {
  */
 export type FlwStepsCountOutputType = {
     FlwExecutionSteps: number;
+    FlwConditions: number;
 };
 export type FlwStepsCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     FlwExecutionSteps?: boolean | FlwStepsCountOutputTypeCountFlwExecutionStepsArgs;
+    FlwConditions?: boolean | FlwStepsCountOutputTypeCountFlwConditionsArgs;
 };
 /**
  * FlwStepsCountOutputType without action
@@ -627,6 +723,12 @@ export type FlwStepsCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ext
 export type FlwStepsCountOutputTypeCountFlwExecutionStepsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     where?: Prisma.FlwExecutionStepsWhereInput;
 };
+/**
+ * FlwStepsCountOutputType without action
+ */
+export type FlwStepsCountOutputTypeCountFlwConditionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.FlwConditionsWhereInput;
+};
 export type FlwStepsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     flwId?: boolean;
@@ -639,6 +741,7 @@ export type FlwStepsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
     inputMapping?: boolean;
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
     FlwExecutionSteps?: boolean | Prisma.FlwSteps$FlwExecutionStepsArgs<ExtArgs>;
+    FlwConditions?: boolean | Prisma.FlwSteps$FlwConditionsArgs<ExtArgs>;
     _count?: boolean | Prisma.FlwStepsCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["flwSteps"]>;
 export type FlwStepsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -680,6 +783,7 @@ export type FlwStepsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs =
 export type FlwStepsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
     FlwExecutionSteps?: boolean | Prisma.FlwSteps$FlwExecutionStepsArgs<ExtArgs>;
+    FlwConditions?: boolean | Prisma.FlwSteps$FlwConditionsArgs<ExtArgs>;
     _count?: boolean | Prisma.FlwStepsCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type FlwStepsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -693,6 +797,7 @@ export type $FlwStepsPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     objects: {
         Flw: Prisma.$FlwPayload<ExtArgs>;
         FlwExecutionSteps: Prisma.$FlwExecutionStepsPayload<ExtArgs>[];
+        FlwConditions: Prisma.$FlwConditionsPayload<ExtArgs>[];
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: string;
@@ -1035,6 +1140,7 @@ export interface Prisma__FlwStepsClient<T, Null = never, ExtArgs extends runtime
     readonly [Symbol.toStringTag]: "PrismaPromise";
     Flw<T extends Prisma.FlwDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FlwDefaultArgs<ExtArgs>>): Prisma.Prisma__FlwClient<runtime.Types.Result.GetResult<Prisma.$FlwPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
     FlwExecutionSteps<T extends Prisma.FlwSteps$FlwExecutionStepsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FlwSteps$FlwExecutionStepsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FlwExecutionStepsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    FlwConditions<T extends Prisma.FlwSteps$FlwConditionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FlwSteps$FlwConditionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FlwConditionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1469,6 +1575,29 @@ export type FlwSteps$FlwExecutionStepsArgs<ExtArgs extends runtime.Types.Extensi
     take?: number;
     skip?: number;
     distinct?: Prisma.FlwExecutionStepsScalarFieldEnum | Prisma.FlwExecutionStepsScalarFieldEnum[];
+};
+/**
+ * FlwSteps.FlwConditions
+ */
+export type FlwSteps$FlwConditionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FlwConditions
+     */
+    select?: Prisma.FlwConditionsSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the FlwConditions
+     */
+    omit?: Prisma.FlwConditionsOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.FlwConditionsInclude<ExtArgs> | null;
+    where?: Prisma.FlwConditionsWhereInput;
+    orderBy?: Prisma.FlwConditionsOrderByWithRelationInput | Prisma.FlwConditionsOrderByWithRelationInput[];
+    cursor?: Prisma.FlwConditionsWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.FlwConditionsScalarFieldEnum | Prisma.FlwConditionsScalarFieldEnum[];
 };
 /**
  * FlwSteps without action

@@ -5,6 +5,15 @@ type FlowStepInput = {
     operationKey?: string | undefined;
     configPayload?: unknown;
     inputMapping?: unknown;
+    conditions?: FlowConditionInput[] | undefined;
+};
+type FlowConditionInput = {
+    sourceType: "Trigger" | "StepOutput";
+    sourceStepPosition?: number | undefined;
+    fieldPath: string;
+    operator: "Equals" | "NotEquals" | "Contains" | "NotContains" | "GreaterThan" | "LessThan" | "Exists" | "NotExists";
+    comparisonValue?: unknown;
+    logicGate?: "And" | "Or" | undefined;
 };
 export declare function createFlowDefinition(input: {
     name: string;
@@ -13,9 +22,23 @@ export declare function createFlowDefinition(input: {
     status?: "Draft" | "Active" | "Paused" | "Archived" | undefined;
     eventKey?: string | undefined;
     webhookKey?: string | undefined;
+    conditions?: FlowConditionInput[] | undefined;
     configPayload?: unknown;
 }): Promise<{
-    FlwSteps: {
+    FlwSteps: ({
+        FlwConditions: {
+            id: string;
+            position: number;
+            flwId: string;
+            sourceType: import("../../generated/prisma/enums.js").FlwConditionSourceType;
+            operator: import("../../generated/prisma/enums.js").FlwConditionOperator;
+            fieldPath: string;
+            comparisonValue: import("@prisma/client/runtime/client").JsonValue | null;
+            logicGate: import("../../generated/prisma/enums.js").FlwConditionLogicGate;
+            flwStepId: string | null;
+            sourceStepId: string | null;
+        }[];
+    } & {
         id: string;
         name: string | null;
         position: number;
@@ -25,6 +48,18 @@ export declare function createFlowDefinition(input: {
         configPayload: import("@prisma/client/runtime/client").JsonValue | null;
         inputMapping: import("@prisma/client/runtime/client").JsonValue | null;
         flwId: string;
+    })[];
+    FlwConditions: {
+        id: string;
+        position: number;
+        flwId: string;
+        sourceType: import("../../generated/prisma/enums.js").FlwConditionSourceType;
+        operator: import("../../generated/prisma/enums.js").FlwConditionOperator;
+        fieldPath: string;
+        comparisonValue: import("@prisma/client/runtime/client").JsonValue | null;
+        logicGate: import("../../generated/prisma/enums.js").FlwConditionLogicGate;
+        flwStepId: string | null;
+        sourceStepId: string | null;
     }[];
 } & {
     id: string;
@@ -35,7 +70,20 @@ export declare function createFlowDefinition(input: {
     createdAt: Date;
 }>;
 export declare function getFlowDefinition(flwId: string): Promise<({
-    FlwSteps: {
+    FlwSteps: ({
+        FlwConditions: {
+            id: string;
+            position: number;
+            flwId: string;
+            sourceType: import("../../generated/prisma/enums.js").FlwConditionSourceType;
+            operator: import("../../generated/prisma/enums.js").FlwConditionOperator;
+            fieldPath: string;
+            comparisonValue: import("@prisma/client/runtime/client").JsonValue | null;
+            logicGate: import("../../generated/prisma/enums.js").FlwConditionLogicGate;
+            flwStepId: string | null;
+            sourceStepId: string | null;
+        }[];
+    } & {
         id: string;
         name: string | null;
         position: number;
@@ -45,6 +93,18 @@ export declare function getFlowDefinition(flwId: string): Promise<({
         configPayload: import("@prisma/client/runtime/client").JsonValue | null;
         inputMapping: import("@prisma/client/runtime/client").JsonValue | null;
         flwId: string;
+    })[];
+    FlwConditions: {
+        id: string;
+        position: number;
+        flwId: string;
+        sourceType: import("../../generated/prisma/enums.js").FlwConditionSourceType;
+        operator: import("../../generated/prisma/enums.js").FlwConditionOperator;
+        fieldPath: string;
+        comparisonValue: import("@prisma/client/runtime/client").JsonValue | null;
+        logicGate: import("../../generated/prisma/enums.js").FlwConditionLogicGate;
+        flwStepId: string | null;
+        sourceStepId: string | null;
     }[];
     FlwExecutions: {
         id: string;
@@ -67,7 +127,20 @@ export declare function getFlowDefinition(flwId: string): Promise<({
     createdAt: Date;
 }) | null>;
 export declare function listFlowDefinitions(): Promise<({
-    FlwSteps: {
+    FlwSteps: ({
+        FlwConditions: {
+            id: string;
+            position: number;
+            flwId: string;
+            sourceType: import("../../generated/prisma/enums.js").FlwConditionSourceType;
+            operator: import("../../generated/prisma/enums.js").FlwConditionOperator;
+            fieldPath: string;
+            comparisonValue: import("@prisma/client/runtime/client").JsonValue | null;
+            logicGate: import("../../generated/prisma/enums.js").FlwConditionLogicGate;
+            flwStepId: string | null;
+            sourceStepId: string | null;
+        }[];
+    } & {
         id: string;
         name: string | null;
         position: number;
@@ -77,6 +150,18 @@ export declare function listFlowDefinitions(): Promise<({
         configPayload: import("@prisma/client/runtime/client").JsonValue | null;
         inputMapping: import("@prisma/client/runtime/client").JsonValue | null;
         flwId: string;
+    })[];
+    FlwConditions: {
+        id: string;
+        position: number;
+        flwId: string;
+        sourceType: import("../../generated/prisma/enums.js").FlwConditionSourceType;
+        operator: import("../../generated/prisma/enums.js").FlwConditionOperator;
+        fieldPath: string;
+        comparisonValue: import("@prisma/client/runtime/client").JsonValue | null;
+        logicGate: import("../../generated/prisma/enums.js").FlwConditionLogicGate;
+        flwStepId: string | null;
+        sourceStepId: string | null;
     }[];
     _count: {
         FlwExecutions: number;
@@ -94,9 +179,23 @@ export declare function updateFlowDefinition(flwId: string, input: {
     status?: "Draft" | "Active" | "Paused" | "Archived" | undefined;
     eventKey?: string | null | undefined;
     webhookKey?: string | null | undefined;
+    conditions?: FlowConditionInput[] | undefined;
     steps?: FlowStepInput[] | undefined;
 }): Promise<{
-    FlwSteps: {
+    FlwSteps: ({
+        FlwConditions: {
+            id: string;
+            position: number;
+            flwId: string;
+            sourceType: import("../../generated/prisma/enums.js").FlwConditionSourceType;
+            operator: import("../../generated/prisma/enums.js").FlwConditionOperator;
+            fieldPath: string;
+            comparisonValue: import("@prisma/client/runtime/client").JsonValue | null;
+            logicGate: import("../../generated/prisma/enums.js").FlwConditionLogicGate;
+            flwStepId: string | null;
+            sourceStepId: string | null;
+        }[];
+    } & {
         id: string;
         name: string | null;
         position: number;
@@ -106,6 +205,18 @@ export declare function updateFlowDefinition(flwId: string, input: {
         configPayload: import("@prisma/client/runtime/client").JsonValue | null;
         inputMapping: import("@prisma/client/runtime/client").JsonValue | null;
         flwId: string;
+    })[];
+    FlwConditions: {
+        id: string;
+        position: number;
+        flwId: string;
+        sourceType: import("../../generated/prisma/enums.js").FlwConditionSourceType;
+        operator: import("../../generated/prisma/enums.js").FlwConditionOperator;
+        fieldPath: string;
+        comparisonValue: import("@prisma/client/runtime/client").JsonValue | null;
+        logicGate: import("../../generated/prisma/enums.js").FlwConditionLogicGate;
+        flwStepId: string | null;
+        sourceStepId: string | null;
     }[];
 } & {
     id: string;

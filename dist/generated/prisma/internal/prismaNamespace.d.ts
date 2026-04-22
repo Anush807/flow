@@ -235,6 +235,7 @@ export declare const ModelName: {
     readonly FlwSteps: "FlwSteps";
     readonly FlwExecutions: "FlwExecutions";
     readonly FlwExecutionSteps: "FlwExecutionSteps";
+    readonly FlwConditions: "FlwConditions";
     readonly ProcessedEvents: "ProcessedEvents";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -248,7 +249,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "flw" | "flwSteps" | "flwExecutions" | "flwExecutionSteps" | "processedEvents";
+        modelProps: "flw" | "flwSteps" | "flwExecutions" | "flwExecutionSteps" | "flwConditions" | "processedEvents";
         txIsolationLevel: TransactionIsolationLevel;
     };
     model: {
@@ -548,6 +549,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
+        FlwConditions: {
+            payload: Prisma.$FlwConditionsPayload<ExtArgs>;
+            fields: Prisma.FlwConditionsFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.FlwConditionsFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.FlwConditionsFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload>;
+                };
+                findFirst: {
+                    args: Prisma.FlwConditionsFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.FlwConditionsFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload>;
+                };
+                findMany: {
+                    args: Prisma.FlwConditionsFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload>[];
+                };
+                create: {
+                    args: Prisma.FlwConditionsCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload>;
+                };
+                createMany: {
+                    args: Prisma.FlwConditionsCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                createManyAndReturn: {
+                    args: Prisma.FlwConditionsCreateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload>[];
+                };
+                delete: {
+                    args: Prisma.FlwConditionsDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload>;
+                };
+                update: {
+                    args: Prisma.FlwConditionsUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.FlwConditionsDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.FlwConditionsUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateManyAndReturn: {
+                    args: Prisma.FlwConditionsUpdateManyAndReturnArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload>[];
+                };
+                upsert: {
+                    args: Prisma.FlwConditionsUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$FlwConditionsPayload>;
+                };
+                aggregate: {
+                    args: Prisma.FlwConditionsAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateFlwConditions>;
+                };
+                groupBy: {
+                    args: Prisma.FlwConditionsGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.FlwConditionsGroupByOutputType>[];
+                };
+                count: {
+                    args: Prisma.FlwConditionsCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.FlwConditionsCountAggregateOutputType> | number;
+                };
+            };
+        };
         ProcessedEvents: {
             payload: Prisma.$ProcessedEventsPayload<ExtArgs>;
             fields: Prisma.ProcessedEventsFieldRefs;
@@ -705,6 +780,19 @@ export declare const FlwExecutionStepsScalarFieldEnum: {
     readonly nextRetryAt: "nextRetryAt";
 };
 export type FlwExecutionStepsScalarFieldEnum = (typeof FlwExecutionStepsScalarFieldEnum)[keyof typeof FlwExecutionStepsScalarFieldEnum];
+export declare const FlwConditionsScalarFieldEnum: {
+    readonly id: "id";
+    readonly flwId: "flwId";
+    readonly flwStepId: "flwStepId";
+    readonly sourceType: "sourceType";
+    readonly sourceStepId: "sourceStepId";
+    readonly fieldPath: "fieldPath";
+    readonly operator: "operator";
+    readonly comparisonValue: "comparisonValue";
+    readonly logicGate: "logicGate";
+    readonly position: "position";
+};
+export type FlwConditionsScalarFieldEnum = (typeof FlwConditionsScalarFieldEnum)[keyof typeof FlwConditionsScalarFieldEnum];
 export declare const ProcessedEventsScalarFieldEnum: {
     readonly id: "id";
     readonly eventKey: "eventKey";
@@ -798,6 +886,30 @@ export type EnumFlwExecutionStatusFieldRefInput<$PrismaModel> = FieldRefInputTyp
  * Reference to a field of type 'FlwExecutionStatus[]'
  */
 export type ListEnumFlwExecutionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FlwExecutionStatus[]'>;
+/**
+ * Reference to a field of type 'FlwConditionSourceType'
+ */
+export type EnumFlwConditionSourceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FlwConditionSourceType'>;
+/**
+ * Reference to a field of type 'FlwConditionSourceType[]'
+ */
+export type ListEnumFlwConditionSourceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FlwConditionSourceType[]'>;
+/**
+ * Reference to a field of type 'FlwConditionOperator'
+ */
+export type EnumFlwConditionOperatorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FlwConditionOperator'>;
+/**
+ * Reference to a field of type 'FlwConditionOperator[]'
+ */
+export type ListEnumFlwConditionOperatorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FlwConditionOperator[]'>;
+/**
+ * Reference to a field of type 'FlwConditionLogicGate'
+ */
+export type EnumFlwConditionLogicGateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FlwConditionLogicGate'>;
+/**
+ * Reference to a field of type 'FlwConditionLogicGate[]'
+ */
+export type ListEnumFlwConditionLogicGateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FlwConditionLogicGate[]'>;
 /**
  * Reference to a field of type 'Float'
  */
@@ -904,6 +1016,7 @@ export type GlobalOmitConfig = {
     flwSteps?: Prisma.FlwStepsOmit;
     flwExecutions?: Prisma.FlwExecutionsOmit;
     flwExecutionSteps?: Prisma.FlwExecutionStepsOmit;
+    flwConditions?: Prisma.FlwConditionsOmit;
     processedEvents?: Prisma.ProcessedEventsOmit;
 };
 export type LogLevel = 'info' | 'query' | 'warn' | 'error';

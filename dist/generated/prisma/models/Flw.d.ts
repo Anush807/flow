@@ -148,6 +148,7 @@ export type FlwWhereInput = {
     status?: Prisma.EnumFlwStatusFilter<"Flw"> | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFilter<"Flw"> | Date | string;
     FlwSteps?: Prisma.FlwStepsListRelationFilter;
+    FlwConditions?: Prisma.FlwConditionsListRelationFilter;
     FlwExecutions?: Prisma.FlwExecutionsListRelationFilter;
     ProcessedEvents?: Prisma.ProcessedEventsListRelationFilter;
 };
@@ -159,6 +160,7 @@ export type FlwOrderByWithRelationInput = {
     status?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     FlwSteps?: Prisma.FlwStepsOrderByRelationAggregateInput;
+    FlwConditions?: Prisma.FlwConditionsOrderByRelationAggregateInput;
     FlwExecutions?: Prisma.FlwExecutionsOrderByRelationAggregateInput;
     ProcessedEvents?: Prisma.ProcessedEventsOrderByRelationAggregateInput;
 };
@@ -173,6 +175,7 @@ export type FlwWhereUniqueInput = Prisma.AtLeast<{
     status?: Prisma.EnumFlwStatusFilter<"Flw"> | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFilter<"Flw"> | Date | string;
     FlwSteps?: Prisma.FlwStepsListRelationFilter;
+    FlwConditions?: Prisma.FlwConditionsListRelationFilter;
     FlwExecutions?: Prisma.FlwExecutionsListRelationFilter;
     ProcessedEvents?: Prisma.ProcessedEventsListRelationFilter;
 }, "id" | "eventKey" | "webhookKey">;
@@ -206,6 +209,7 @@ export type FlwCreateInput = {
     status?: $Enums.FlwStatus;
     createdAt?: Date | string;
     FlwSteps?: Prisma.FlwStepsCreateNestedManyWithoutFlwInput;
+    FlwConditions?: Prisma.FlwConditionsCreateNestedManyWithoutFlwInput;
     FlwExecutions?: Prisma.FlwExecutionsCreateNestedManyWithoutFlwInput;
     ProcessedEvents?: Prisma.ProcessedEventsCreateNestedManyWithoutFlwInput;
 };
@@ -217,6 +221,7 @@ export type FlwUncheckedCreateInput = {
     status?: $Enums.FlwStatus;
     createdAt?: Date | string;
     FlwSteps?: Prisma.FlwStepsUncheckedCreateNestedManyWithoutFlwInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedCreateNestedManyWithoutFlwInput;
     FlwExecutions?: Prisma.FlwExecutionsUncheckedCreateNestedManyWithoutFlwInput;
     ProcessedEvents?: Prisma.ProcessedEventsUncheckedCreateNestedManyWithoutFlwInput;
 };
@@ -228,6 +233,7 @@ export type FlwUpdateInput = {
     status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     FlwSteps?: Prisma.FlwStepsUpdateManyWithoutFlwNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUpdateManyWithoutFlwNestedInput;
     FlwExecutions?: Prisma.FlwExecutionsUpdateManyWithoutFlwNestedInput;
     ProcessedEvents?: Prisma.ProcessedEventsUpdateManyWithoutFlwNestedInput;
 };
@@ -239,6 +245,7 @@ export type FlwUncheckedUpdateInput = {
     status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     FlwSteps?: Prisma.FlwStepsUncheckedUpdateManyWithoutFlwNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedUpdateManyWithoutFlwNestedInput;
     FlwExecutions?: Prisma.FlwExecutionsUncheckedUpdateManyWithoutFlwNestedInput;
     ProcessedEvents?: Prisma.ProcessedEventsUncheckedUpdateManyWithoutFlwNestedInput;
 };
@@ -330,6 +337,18 @@ export type FlwUpdateOneRequiredWithoutFlwExecutionsNestedInput = {
     connect?: Prisma.FlwWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.FlwUpdateToOneWithWhereWithoutFlwExecutionsInput, Prisma.FlwUpdateWithoutFlwExecutionsInput>, Prisma.FlwUncheckedUpdateWithoutFlwExecutionsInput>;
 };
+export type FlwCreateNestedOneWithoutFlwConditionsInput = {
+    create?: Prisma.XOR<Prisma.FlwCreateWithoutFlwConditionsInput, Prisma.FlwUncheckedCreateWithoutFlwConditionsInput>;
+    connectOrCreate?: Prisma.FlwCreateOrConnectWithoutFlwConditionsInput;
+    connect?: Prisma.FlwWhereUniqueInput;
+};
+export type FlwUpdateOneRequiredWithoutFlwConditionsNestedInput = {
+    create?: Prisma.XOR<Prisma.FlwCreateWithoutFlwConditionsInput, Prisma.FlwUncheckedCreateWithoutFlwConditionsInput>;
+    connectOrCreate?: Prisma.FlwCreateOrConnectWithoutFlwConditionsInput;
+    upsert?: Prisma.FlwUpsertWithoutFlwConditionsInput;
+    connect?: Prisma.FlwWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.FlwUpdateToOneWithWhereWithoutFlwConditionsInput, Prisma.FlwUpdateWithoutFlwConditionsInput>, Prisma.FlwUncheckedUpdateWithoutFlwConditionsInput>;
+};
 export type FlwCreateNestedOneWithoutProcessedEventsInput = {
     create?: Prisma.XOR<Prisma.FlwCreateWithoutProcessedEventsInput, Prisma.FlwUncheckedCreateWithoutProcessedEventsInput>;
     connectOrCreate?: Prisma.FlwCreateOrConnectWithoutProcessedEventsInput;
@@ -349,6 +368,7 @@ export type FlwCreateWithoutFlwStepsInput = {
     webhookKey?: string | null;
     status?: $Enums.FlwStatus;
     createdAt?: Date | string;
+    FlwConditions?: Prisma.FlwConditionsCreateNestedManyWithoutFlwInput;
     FlwExecutions?: Prisma.FlwExecutionsCreateNestedManyWithoutFlwInput;
     ProcessedEvents?: Prisma.ProcessedEventsCreateNestedManyWithoutFlwInput;
 };
@@ -359,6 +379,7 @@ export type FlwUncheckedCreateWithoutFlwStepsInput = {
     webhookKey?: string | null;
     status?: $Enums.FlwStatus;
     createdAt?: Date | string;
+    FlwConditions?: Prisma.FlwConditionsUncheckedCreateNestedManyWithoutFlwInput;
     FlwExecutions?: Prisma.FlwExecutionsUncheckedCreateNestedManyWithoutFlwInput;
     ProcessedEvents?: Prisma.ProcessedEventsUncheckedCreateNestedManyWithoutFlwInput;
 };
@@ -382,6 +403,7 @@ export type FlwUpdateWithoutFlwStepsInput = {
     webhookKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    FlwConditions?: Prisma.FlwConditionsUpdateManyWithoutFlwNestedInput;
     FlwExecutions?: Prisma.FlwExecutionsUpdateManyWithoutFlwNestedInput;
     ProcessedEvents?: Prisma.ProcessedEventsUpdateManyWithoutFlwNestedInput;
 };
@@ -392,6 +414,7 @@ export type FlwUncheckedUpdateWithoutFlwStepsInput = {
     webhookKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    FlwConditions?: Prisma.FlwConditionsUncheckedUpdateManyWithoutFlwNestedInput;
     FlwExecutions?: Prisma.FlwExecutionsUncheckedUpdateManyWithoutFlwNestedInput;
     ProcessedEvents?: Prisma.ProcessedEventsUncheckedUpdateManyWithoutFlwNestedInput;
 };
@@ -403,6 +426,7 @@ export type FlwCreateWithoutFlwExecutionsInput = {
     status?: $Enums.FlwStatus;
     createdAt?: Date | string;
     FlwSteps?: Prisma.FlwStepsCreateNestedManyWithoutFlwInput;
+    FlwConditions?: Prisma.FlwConditionsCreateNestedManyWithoutFlwInput;
     ProcessedEvents?: Prisma.ProcessedEventsCreateNestedManyWithoutFlwInput;
 };
 export type FlwUncheckedCreateWithoutFlwExecutionsInput = {
@@ -413,6 +437,7 @@ export type FlwUncheckedCreateWithoutFlwExecutionsInput = {
     status?: $Enums.FlwStatus;
     createdAt?: Date | string;
     FlwSteps?: Prisma.FlwStepsUncheckedCreateNestedManyWithoutFlwInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedCreateNestedManyWithoutFlwInput;
     ProcessedEvents?: Prisma.ProcessedEventsUncheckedCreateNestedManyWithoutFlwInput;
 };
 export type FlwCreateOrConnectWithoutFlwExecutionsInput = {
@@ -436,6 +461,7 @@ export type FlwUpdateWithoutFlwExecutionsInput = {
     status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     FlwSteps?: Prisma.FlwStepsUpdateManyWithoutFlwNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUpdateManyWithoutFlwNestedInput;
     ProcessedEvents?: Prisma.ProcessedEventsUpdateManyWithoutFlwNestedInput;
 };
 export type FlwUncheckedUpdateWithoutFlwExecutionsInput = {
@@ -446,6 +472,64 @@ export type FlwUncheckedUpdateWithoutFlwExecutionsInput = {
     status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     FlwSteps?: Prisma.FlwStepsUncheckedUpdateManyWithoutFlwNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedUpdateManyWithoutFlwNestedInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUncheckedUpdateManyWithoutFlwNestedInput;
+};
+export type FlwCreateWithoutFlwConditionsInput = {
+    id?: string;
+    name: string;
+    eventKey?: string | null;
+    webhookKey?: string | null;
+    status?: $Enums.FlwStatus;
+    createdAt?: Date | string;
+    FlwSteps?: Prisma.FlwStepsCreateNestedManyWithoutFlwInput;
+    FlwExecutions?: Prisma.FlwExecutionsCreateNestedManyWithoutFlwInput;
+    ProcessedEvents?: Prisma.ProcessedEventsCreateNestedManyWithoutFlwInput;
+};
+export type FlwUncheckedCreateWithoutFlwConditionsInput = {
+    id?: string;
+    name: string;
+    eventKey?: string | null;
+    webhookKey?: string | null;
+    status?: $Enums.FlwStatus;
+    createdAt?: Date | string;
+    FlwSteps?: Prisma.FlwStepsUncheckedCreateNestedManyWithoutFlwInput;
+    FlwExecutions?: Prisma.FlwExecutionsUncheckedCreateNestedManyWithoutFlwInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUncheckedCreateNestedManyWithoutFlwInput;
+};
+export type FlwCreateOrConnectWithoutFlwConditionsInput = {
+    where: Prisma.FlwWhereUniqueInput;
+    create: Prisma.XOR<Prisma.FlwCreateWithoutFlwConditionsInput, Prisma.FlwUncheckedCreateWithoutFlwConditionsInput>;
+};
+export type FlwUpsertWithoutFlwConditionsInput = {
+    update: Prisma.XOR<Prisma.FlwUpdateWithoutFlwConditionsInput, Prisma.FlwUncheckedUpdateWithoutFlwConditionsInput>;
+    create: Prisma.XOR<Prisma.FlwCreateWithoutFlwConditionsInput, Prisma.FlwUncheckedCreateWithoutFlwConditionsInput>;
+    where?: Prisma.FlwWhereInput;
+};
+export type FlwUpdateToOneWithWhereWithoutFlwConditionsInput = {
+    where?: Prisma.FlwWhereInput;
+    data: Prisma.XOR<Prisma.FlwUpdateWithoutFlwConditionsInput, Prisma.FlwUncheckedUpdateWithoutFlwConditionsInput>;
+};
+export type FlwUpdateWithoutFlwConditionsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    eventKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    webhookKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    FlwSteps?: Prisma.FlwStepsUpdateManyWithoutFlwNestedInput;
+    FlwExecutions?: Prisma.FlwExecutionsUpdateManyWithoutFlwNestedInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUpdateManyWithoutFlwNestedInput;
+};
+export type FlwUncheckedUpdateWithoutFlwConditionsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    eventKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    webhookKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    FlwSteps?: Prisma.FlwStepsUncheckedUpdateManyWithoutFlwNestedInput;
+    FlwExecutions?: Prisma.FlwExecutionsUncheckedUpdateManyWithoutFlwNestedInput;
     ProcessedEvents?: Prisma.ProcessedEventsUncheckedUpdateManyWithoutFlwNestedInput;
 };
 export type FlwCreateWithoutProcessedEventsInput = {
@@ -456,6 +540,7 @@ export type FlwCreateWithoutProcessedEventsInput = {
     status?: $Enums.FlwStatus;
     createdAt?: Date | string;
     FlwSteps?: Prisma.FlwStepsCreateNestedManyWithoutFlwInput;
+    FlwConditions?: Prisma.FlwConditionsCreateNestedManyWithoutFlwInput;
     FlwExecutions?: Prisma.FlwExecutionsCreateNestedManyWithoutFlwInput;
 };
 export type FlwUncheckedCreateWithoutProcessedEventsInput = {
@@ -466,6 +551,7 @@ export type FlwUncheckedCreateWithoutProcessedEventsInput = {
     status?: $Enums.FlwStatus;
     createdAt?: Date | string;
     FlwSteps?: Prisma.FlwStepsUncheckedCreateNestedManyWithoutFlwInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedCreateNestedManyWithoutFlwInput;
     FlwExecutions?: Prisma.FlwExecutionsUncheckedCreateNestedManyWithoutFlwInput;
 };
 export type FlwCreateOrConnectWithoutProcessedEventsInput = {
@@ -489,6 +575,7 @@ export type FlwUpdateWithoutProcessedEventsInput = {
     status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     FlwSteps?: Prisma.FlwStepsUpdateManyWithoutFlwNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUpdateManyWithoutFlwNestedInput;
     FlwExecutions?: Prisma.FlwExecutionsUpdateManyWithoutFlwNestedInput;
 };
 export type FlwUncheckedUpdateWithoutProcessedEventsInput = {
@@ -499,6 +586,7 @@ export type FlwUncheckedUpdateWithoutProcessedEventsInput = {
     status?: Prisma.EnumFlwStatusFieldUpdateOperationsInput | $Enums.FlwStatus;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     FlwSteps?: Prisma.FlwStepsUncheckedUpdateManyWithoutFlwNestedInput;
+    FlwConditions?: Prisma.FlwConditionsUncheckedUpdateManyWithoutFlwNestedInput;
     FlwExecutions?: Prisma.FlwExecutionsUncheckedUpdateManyWithoutFlwNestedInput;
 };
 /**
@@ -506,11 +594,13 @@ export type FlwUncheckedUpdateWithoutProcessedEventsInput = {
  */
 export type FlwCountOutputType = {
     FlwSteps: number;
+    FlwConditions: number;
     FlwExecutions: number;
     ProcessedEvents: number;
 };
 export type FlwCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     FlwSteps?: boolean | FlwCountOutputTypeCountFlwStepsArgs;
+    FlwConditions?: boolean | FlwCountOutputTypeCountFlwConditionsArgs;
     FlwExecutions?: boolean | FlwCountOutputTypeCountFlwExecutionsArgs;
     ProcessedEvents?: boolean | FlwCountOutputTypeCountProcessedEventsArgs;
 };
@@ -532,6 +622,12 @@ export type FlwCountOutputTypeCountFlwStepsArgs<ExtArgs extends runtime.Types.Ex
 /**
  * FlwCountOutputType without action
  */
+export type FlwCountOutputTypeCountFlwConditionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.FlwConditionsWhereInput;
+};
+/**
+ * FlwCountOutputType without action
+ */
 export type FlwCountOutputTypeCountFlwExecutionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     where?: Prisma.FlwExecutionsWhereInput;
 };
@@ -549,6 +645,7 @@ export type FlwSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
     status?: boolean;
     createdAt?: boolean;
     FlwSteps?: boolean | Prisma.Flw$FlwStepsArgs<ExtArgs>;
+    FlwConditions?: boolean | Prisma.Flw$FlwConditionsArgs<ExtArgs>;
     FlwExecutions?: boolean | Prisma.Flw$FlwExecutionsArgs<ExtArgs>;
     ProcessedEvents?: boolean | Prisma.Flw$ProcessedEventsArgs<ExtArgs>;
     _count?: boolean | Prisma.FlwCountOutputTypeDefaultArgs<ExtArgs>;
@@ -580,6 +677,7 @@ export type FlwSelectScalar = {
 export type FlwOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "eventKey" | "webhookKey" | "status" | "createdAt", ExtArgs["result"]["flw"]>;
 export type FlwInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     FlwSteps?: boolean | Prisma.Flw$FlwStepsArgs<ExtArgs>;
+    FlwConditions?: boolean | Prisma.Flw$FlwConditionsArgs<ExtArgs>;
     FlwExecutions?: boolean | Prisma.Flw$FlwExecutionsArgs<ExtArgs>;
     ProcessedEvents?: boolean | Prisma.Flw$ProcessedEventsArgs<ExtArgs>;
     _count?: boolean | Prisma.FlwCountOutputTypeDefaultArgs<ExtArgs>;
@@ -590,6 +688,7 @@ export type $FlwPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     name: "Flw";
     objects: {
         FlwSteps: Prisma.$FlwStepsPayload<ExtArgs>[];
+        FlwConditions: Prisma.$FlwConditionsPayload<ExtArgs>[];
         FlwExecutions: Prisma.$FlwExecutionsPayload<ExtArgs>[];
         ProcessedEvents: Prisma.$ProcessedEventsPayload<ExtArgs>[];
     };
@@ -930,6 +1029,7 @@ export interface FlwDelegate<ExtArgs extends runtime.Types.Extensions.InternalAr
 export interface Prisma__FlwClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
     FlwSteps<T extends Prisma.Flw$FlwStepsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Flw$FlwStepsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FlwStepsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    FlwConditions<T extends Prisma.Flw$FlwConditionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Flw$FlwConditionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FlwConditionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     FlwExecutions<T extends Prisma.Flw$FlwExecutionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Flw$FlwExecutionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FlwExecutionsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     ProcessedEvents<T extends Prisma.Flw$ProcessedEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Flw$ProcessedEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProcessedEventsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     /**
@@ -1355,6 +1455,29 @@ export type Flw$FlwStepsArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
     take?: number;
     skip?: number;
     distinct?: Prisma.FlwStepsScalarFieldEnum | Prisma.FlwStepsScalarFieldEnum[];
+};
+/**
+ * Flw.FlwConditions
+ */
+export type Flw$FlwConditionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FlwConditions
+     */
+    select?: Prisma.FlwConditionsSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the FlwConditions
+     */
+    omit?: Prisma.FlwConditionsOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.FlwConditionsInclude<ExtArgs> | null;
+    where?: Prisma.FlwConditionsWhereInput;
+    orderBy?: Prisma.FlwConditionsOrderByWithRelationInput | Prisma.FlwConditionsOrderByWithRelationInput[];
+    cursor?: Prisma.FlwConditionsWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.FlwConditionsScalarFieldEnum | Prisma.FlwConditionsScalarFieldEnum[];
 };
 /**
  * Flw.FlwExecutions

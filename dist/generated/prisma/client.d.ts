@@ -40,6 +40,11 @@ export type FlwExecutions = Prisma.FlwExecutionsModel;
  */
 export type FlwExecutionSteps = Prisma.FlwExecutionStepsModel;
 /**
+ * Model FlwConditions
+ *
+ */
+export type FlwConditions = Prisma.FlwConditionsModel;
+/**
  * Model ProcessedEvents
  *
  */
