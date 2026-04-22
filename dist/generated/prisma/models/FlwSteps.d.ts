@@ -425,9 +425,6 @@ export type FlwStepsUncheckedUpdateManyWithoutFlwNestedInput = {
     updateMany?: Prisma.FlwStepsUpdateManyWithWhereWithoutFlwInput | Prisma.FlwStepsUpdateManyWithWhereWithoutFlwInput[];
     deleteMany?: Prisma.FlwStepsScalarWhereInput | Prisma.FlwStepsScalarWhereInput[];
 };
-export type NullableStringFieldUpdateOperationsInput = {
-    set?: string | null;
-};
 export type IntFieldUpdateOperationsInput = {
     set?: number;
     increment?: number;

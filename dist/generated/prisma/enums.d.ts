@@ -3,6 +3,13 @@ export declare const FlwStepType: {
     readonly Action: "Action";
 };
 export type FlwStepType = (typeof FlwStepType)[keyof typeof FlwStepType];
+export declare const FlwStatus: {
+    readonly Draft: "Draft";
+    readonly Active: "Active";
+    readonly Paused: "Paused";
+    readonly Archived: "Archived";
+};
+export type FlwStatus = (typeof FlwStatus)[keyof typeof FlwStatus];
 export declare const FlwExecutionStatus: {
     readonly Pending: "Pending";
     readonly Success: "Success";

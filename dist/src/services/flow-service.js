@@ -45,6 +45,9 @@ export async function createFlowDefinition(input) {
         const flw = await tx.flw.create({
             data: {
                 name: input.name,
+                ...(input.status !== undefined ? { status: input.status } : {}),
+                ...(input.eventKey !== undefined ? { eventKey: input.eventKey } : {}),
+                ...(input.webhookKey !== undefined ? { webhookKey: input.webhookKey } : {}),
             },
         });
         await tx.flwSteps.createMany({
@@ -80,14 +83,39 @@ export async function getFlowDefinition(flwId) {
         },
     });
 }
+export async function listFlowDefinitions() {
+    return prisma.flw.findMany({
+        orderBy: {
+            createdAt: "desc",
+        },
+        include: {
+            FlwSteps: {
+                orderBy: {
+                    position: "asc",
+                },
+            },
+            _count: {
+                select: {
+                    FlwExecutions: true,
+                },
+            },
+        },
+    });
+}
 export async function updateFlowDefinition(flwId, input) {
     return prisma.$transaction(async (tx) => {
         const flowData = {};
         if (input.name !== undefined) {
             flowData.name = input.name;
         }
-        if (input.isActive !== undefined) {
-            flowData.isActive = input.isActive;
+        if (input.status !== undefined) {
+            flowData.status = input.status;
+        }
+        if (input.eventKey !== undefined) {
+            flowData.eventKey = input.eventKey;
+        }
+        if (input.webhookKey !== undefined) {
+            flowData.webhookKey = input.webhookKey;
         }
         await tx.flw.update({
             where: { id: flwId },

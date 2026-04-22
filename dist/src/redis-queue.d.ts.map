@@ -1,1 +1,1 @@
-{"version":3,"file":"redis-queue.d.ts","sourceRoot":"","sources":["../../src/redis-queue.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,KAAK,EAAE,MAAM,QAAQ,CAAA;AAE9B,eAAO,MAAM,SAAS,2CAKpB,CAAC"}
+{"version":3,"file":"redis-queue.d.ts","sourceRoot":"","sources":["../../src/redis-queue.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,KAAK,EAAE,MAAM,QAAQ,CAAA;AAE9B,eAAO,MAAM,eAAe;;;CAG3B,CAAC;AAEF,eAAO,MAAM,SAAS,2CAOpB,CAAC;AAEH,eAAO,MAAM,iBAAiB,2CAO5B,CAAC"}

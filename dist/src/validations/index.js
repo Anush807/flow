@@ -1,4 +1,5 @@
 import { z } from "zod";
+const flowStatusSchema = z.enum(["Draft", "Active", "Paused", "Archived"]);
 export const flowStepSchema = z.object({
     name: z.string().min(1).optional(),
     type: z.enum(["Trigger", "Action"]),
@@ -10,6 +11,9 @@ export const flowStepSchema = z.object({
 export const createFlowSchema = z
     .object({
     name: z.string().min(1),
+    status: flowStatusSchema.optional(),
+    eventKey: z.string().min(1).optional(),
+    webhookKey: z.string().min(1).optional(),
     steps: z.array(flowStepSchema).min(1).optional(),
     nodeType: z.enum(["Trigger", "Action"]).optional(),
     configPayload: z.unknown().optional(),
@@ -25,15 +29,24 @@ export const createFlowSchema = z
 export const updateFlowSchema = z
     .object({
     name: z.string().min(1).optional(),
-    isActive: z.boolean().optional(),
+    status: flowStatusSchema.optional(),
+    eventKey: z.string().min(1).nullable().optional(),
+    webhookKey: z.string().min(1).nullable().optional(),
     steps: z.array(flowStepSchema).min(1).optional(),
 })
     .refine((value) => value.name !== undefined ||
-    value.isActive !== undefined ||
+    value.status !== undefined ||
+    value.eventKey !== undefined ||
+    value.webhookKey !== undefined ||
     value.steps !== undefined, {
     message: "At least one field must be provided for update",
 });
 export const triggerFlowSchema = z.object({
     triggerPayload: z.unknown().optional(),
+    idempotencyKey: z.string().min(1).optional(),
+});
+export const emitEventSchema = z.object({
+    payload: z.unknown().optional(),
+    idempotencyKey: z.string().min(1).optional(),
 });
 //# sourceMappingURL=index.js.map

@@ -14,18 +14,21 @@ export type ProcessedEventsMinAggregateOutputType = {
     id: string | null;
     eventKey: string | null;
     flwId: string | null;
+    flwExecutionId: string | null;
     processedAt: Date | null;
 };
 export type ProcessedEventsMaxAggregateOutputType = {
     id: string | null;
     eventKey: string | null;
     flwId: string | null;
+    flwExecutionId: string | null;
     processedAt: Date | null;
 };
 export type ProcessedEventsCountAggregateOutputType = {
     id: number;
     eventKey: number;
     flwId: number;
+    flwExecutionId: number;
     processedAt: number;
     _all: number;
 };
@@ -33,18 +36,21 @@ export type ProcessedEventsMinAggregateInputType = {
     id?: true;
     eventKey?: true;
     flwId?: true;
+    flwExecutionId?: true;
     processedAt?: true;
 };
 export type ProcessedEventsMaxAggregateInputType = {
     id?: true;
     eventKey?: true;
     flwId?: true;
+    flwExecutionId?: true;
     processedAt?: true;
 };
 export type ProcessedEventsCountAggregateInputType = {
     id?: true;
     eventKey?: true;
     flwId?: true;
+    flwExecutionId?: true;
     processedAt?: true;
     _all?: true;
 };
@@ -114,6 +120,7 @@ export type ProcessedEventsGroupByOutputType = {
     id: string;
     eventKey: string;
     flwId: string;
+    flwExecutionId: string | null;
     processedAt: Date;
     _count: ProcessedEventsCountAggregateOutputType | null;
     _min: ProcessedEventsMinAggregateOutputType | null;
@@ -129,30 +136,37 @@ export type ProcessedEventsWhereInput = {
     id?: Prisma.StringFilter<"ProcessedEvents"> | string;
     eventKey?: Prisma.StringFilter<"ProcessedEvents"> | string;
     flwId?: Prisma.StringFilter<"ProcessedEvents"> | string;
+    flwExecutionId?: Prisma.StringNullableFilter<"ProcessedEvents"> | string | null;
     processedAt?: Prisma.DateTimeFilter<"ProcessedEvents"> | Date | string;
     Flw?: Prisma.XOR<Prisma.FlwScalarRelationFilter, Prisma.FlwWhereInput>;
+    FlwExecutions?: Prisma.XOR<Prisma.FlwExecutionsNullableScalarRelationFilter, Prisma.FlwExecutionsWhereInput> | null;
 };
 export type ProcessedEventsOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     eventKey?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
+    flwExecutionId?: Prisma.SortOrderInput | Prisma.SortOrder;
     processedAt?: Prisma.SortOrder;
     Flw?: Prisma.FlwOrderByWithRelationInput;
+    FlwExecutions?: Prisma.FlwExecutionsOrderByWithRelationInput;
 };
 export type ProcessedEventsWhereUniqueInput = Prisma.AtLeast<{
     id?: string;
     eventKey?: string;
+    flwExecutionId?: string;
     AND?: Prisma.ProcessedEventsWhereInput | Prisma.ProcessedEventsWhereInput[];
     OR?: Prisma.ProcessedEventsWhereInput[];
     NOT?: Prisma.ProcessedEventsWhereInput | Prisma.ProcessedEventsWhereInput[];
     flwId?: Prisma.StringFilter<"ProcessedEvents"> | string;
     processedAt?: Prisma.DateTimeFilter<"ProcessedEvents"> | Date | string;
     Flw?: Prisma.XOR<Prisma.FlwScalarRelationFilter, Prisma.FlwWhereInput>;
-}, "id" | "eventKey">;
+    FlwExecutions?: Prisma.XOR<Prisma.FlwExecutionsNullableScalarRelationFilter, Prisma.FlwExecutionsWhereInput> | null;
+}, "id" | "eventKey" | "flwExecutionId">;
 export type ProcessedEventsOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     eventKey?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
+    flwExecutionId?: Prisma.SortOrderInput | Prisma.SortOrder;
     processedAt?: Prisma.SortOrder;
     _count?: Prisma.ProcessedEventsCountOrderByAggregateInput;
     _max?: Prisma.ProcessedEventsMaxOrderByAggregateInput;
@@ -165,6 +179,7 @@ export type ProcessedEventsScalarWhereWithAggregatesInput = {
     id?: Prisma.StringWithAggregatesFilter<"ProcessedEvents"> | string;
     eventKey?: Prisma.StringWithAggregatesFilter<"ProcessedEvents"> | string;
     flwId?: Prisma.StringWithAggregatesFilter<"ProcessedEvents"> | string;
+    flwExecutionId?: Prisma.StringNullableWithAggregatesFilter<"ProcessedEvents"> | string | null;
     processedAt?: Prisma.DateTimeWithAggregatesFilter<"ProcessedEvents"> | Date | string;
 };
 export type ProcessedEventsCreateInput = {
@@ -172,11 +187,13 @@ export type ProcessedEventsCreateInput = {
     eventKey: string;
     processedAt?: Date | string;
     Flw: Prisma.FlwCreateNestedOneWithoutProcessedEventsInput;
+    FlwExecutions?: Prisma.FlwExecutionsCreateNestedOneWithoutProcessedEventsInput;
 };
 export type ProcessedEventsUncheckedCreateInput = {
     id?: string;
     eventKey: string;
     flwId: string;
+    flwExecutionId?: string | null;
     processedAt?: Date | string;
 };
 export type ProcessedEventsUpdateInput = {
@@ -184,17 +201,20 @@ export type ProcessedEventsUpdateInput = {
     eventKey?: Prisma.StringFieldUpdateOperationsInput | string;
     processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     Flw?: Prisma.FlwUpdateOneRequiredWithoutProcessedEventsNestedInput;
+    FlwExecutions?: Prisma.FlwExecutionsUpdateOneWithoutProcessedEventsNestedInput;
 };
 export type ProcessedEventsUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     eventKey?: Prisma.StringFieldUpdateOperationsInput | string;
     flwId?: Prisma.StringFieldUpdateOperationsInput | string;
+    flwExecutionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type ProcessedEventsCreateManyInput = {
     id?: string;
     eventKey: string;
     flwId: string;
+    flwExecutionId?: string | null;
     processedAt?: Date | string;
 };
 export type ProcessedEventsUpdateManyMutationInput = {
@@ -206,6 +226,7 @@ export type ProcessedEventsUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     eventKey?: Prisma.StringFieldUpdateOperationsInput | string;
     flwId?: Prisma.StringFieldUpdateOperationsInput | string;
+    flwExecutionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type ProcessedEventsListRelationFilter = {
@@ -216,22 +237,29 @@ export type ProcessedEventsListRelationFilter = {
 export type ProcessedEventsOrderByRelationAggregateInput = {
     _count?: Prisma.SortOrder;
 };
+export type ProcessedEventsNullableScalarRelationFilter = {
+    is?: Prisma.ProcessedEventsWhereInput | null;
+    isNot?: Prisma.ProcessedEventsWhereInput | null;
+};
 export type ProcessedEventsCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     eventKey?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
+    flwExecutionId?: Prisma.SortOrder;
     processedAt?: Prisma.SortOrder;
 };
 export type ProcessedEventsMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     eventKey?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
+    flwExecutionId?: Prisma.SortOrder;
     processedAt?: Prisma.SortOrder;
 };
 export type ProcessedEventsMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     eventKey?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
+    flwExecutionId?: Prisma.SortOrder;
     processedAt?: Prisma.SortOrder;
 };
 export type ProcessedEventsCreateNestedManyWithoutFlwInput = {
@@ -272,14 +300,44 @@ export type ProcessedEventsUncheckedUpdateManyWithoutFlwNestedInput = {
     updateMany?: Prisma.ProcessedEventsUpdateManyWithWhereWithoutFlwInput | Prisma.ProcessedEventsUpdateManyWithWhereWithoutFlwInput[];
     deleteMany?: Prisma.ProcessedEventsScalarWhereInput | Prisma.ProcessedEventsScalarWhereInput[];
 };
+export type ProcessedEventsCreateNestedOneWithoutFlwExecutionsInput = {
+    create?: Prisma.XOR<Prisma.ProcessedEventsCreateWithoutFlwExecutionsInput, Prisma.ProcessedEventsUncheckedCreateWithoutFlwExecutionsInput>;
+    connectOrCreate?: Prisma.ProcessedEventsCreateOrConnectWithoutFlwExecutionsInput;
+    connect?: Prisma.ProcessedEventsWhereUniqueInput;
+};
+export type ProcessedEventsUncheckedCreateNestedOneWithoutFlwExecutionsInput = {
+    create?: Prisma.XOR<Prisma.ProcessedEventsCreateWithoutFlwExecutionsInput, Prisma.ProcessedEventsUncheckedCreateWithoutFlwExecutionsInput>;
+    connectOrCreate?: Prisma.ProcessedEventsCreateOrConnectWithoutFlwExecutionsInput;
+    connect?: Prisma.ProcessedEventsWhereUniqueInput;
+};
+export type ProcessedEventsUpdateOneWithoutFlwExecutionsNestedInput = {
+    create?: Prisma.XOR<Prisma.ProcessedEventsCreateWithoutFlwExecutionsInput, Prisma.ProcessedEventsUncheckedCreateWithoutFlwExecutionsInput>;
+    connectOrCreate?: Prisma.ProcessedEventsCreateOrConnectWithoutFlwExecutionsInput;
+    upsert?: Prisma.ProcessedEventsUpsertWithoutFlwExecutionsInput;
+    disconnect?: Prisma.ProcessedEventsWhereInput | boolean;
+    delete?: Prisma.ProcessedEventsWhereInput | boolean;
+    connect?: Prisma.ProcessedEventsWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.ProcessedEventsUpdateToOneWithWhereWithoutFlwExecutionsInput, Prisma.ProcessedEventsUpdateWithoutFlwExecutionsInput>, Prisma.ProcessedEventsUncheckedUpdateWithoutFlwExecutionsInput>;
+};
+export type ProcessedEventsUncheckedUpdateOneWithoutFlwExecutionsNestedInput = {
+    create?: Prisma.XOR<Prisma.ProcessedEventsCreateWithoutFlwExecutionsInput, Prisma.ProcessedEventsUncheckedCreateWithoutFlwExecutionsInput>;
+    connectOrCreate?: Prisma.ProcessedEventsCreateOrConnectWithoutFlwExecutionsInput;
+    upsert?: Prisma.ProcessedEventsUpsertWithoutFlwExecutionsInput;
+    disconnect?: Prisma.ProcessedEventsWhereInput | boolean;
+    delete?: Prisma.ProcessedEventsWhereInput | boolean;
+    connect?: Prisma.ProcessedEventsWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.ProcessedEventsUpdateToOneWithWhereWithoutFlwExecutionsInput, Prisma.ProcessedEventsUpdateWithoutFlwExecutionsInput>, Prisma.ProcessedEventsUncheckedUpdateWithoutFlwExecutionsInput>;
+};
 export type ProcessedEventsCreateWithoutFlwInput = {
     id?: string;
     eventKey: string;
     processedAt?: Date | string;
+    FlwExecutions?: Prisma.FlwExecutionsCreateNestedOneWithoutProcessedEventsInput;
 };
 export type ProcessedEventsUncheckedCreateWithoutFlwInput = {
     id?: string;
     eventKey: string;
+    flwExecutionId?: string | null;
     processedAt?: Date | string;
 };
 export type ProcessedEventsCreateOrConnectWithoutFlwInput = {
@@ -310,74 +368,128 @@ export type ProcessedEventsScalarWhereInput = {
     id?: Prisma.StringFilter<"ProcessedEvents"> | string;
     eventKey?: Prisma.StringFilter<"ProcessedEvents"> | string;
     flwId?: Prisma.StringFilter<"ProcessedEvents"> | string;
+    flwExecutionId?: Prisma.StringNullableFilter<"ProcessedEvents"> | string | null;
     processedAt?: Prisma.DateTimeFilter<"ProcessedEvents"> | Date | string;
+};
+export type ProcessedEventsCreateWithoutFlwExecutionsInput = {
+    id?: string;
+    eventKey: string;
+    processedAt?: Date | string;
+    Flw: Prisma.FlwCreateNestedOneWithoutProcessedEventsInput;
+};
+export type ProcessedEventsUncheckedCreateWithoutFlwExecutionsInput = {
+    id?: string;
+    eventKey: string;
+    flwId: string;
+    processedAt?: Date | string;
+};
+export type ProcessedEventsCreateOrConnectWithoutFlwExecutionsInput = {
+    where: Prisma.ProcessedEventsWhereUniqueInput;
+    create: Prisma.XOR<Prisma.ProcessedEventsCreateWithoutFlwExecutionsInput, Prisma.ProcessedEventsUncheckedCreateWithoutFlwExecutionsInput>;
+};
+export type ProcessedEventsUpsertWithoutFlwExecutionsInput = {
+    update: Prisma.XOR<Prisma.ProcessedEventsUpdateWithoutFlwExecutionsInput, Prisma.ProcessedEventsUncheckedUpdateWithoutFlwExecutionsInput>;
+    create: Prisma.XOR<Prisma.ProcessedEventsCreateWithoutFlwExecutionsInput, Prisma.ProcessedEventsUncheckedCreateWithoutFlwExecutionsInput>;
+    where?: Prisma.ProcessedEventsWhereInput;
+};
+export type ProcessedEventsUpdateToOneWithWhereWithoutFlwExecutionsInput = {
+    where?: Prisma.ProcessedEventsWhereInput;
+    data: Prisma.XOR<Prisma.ProcessedEventsUpdateWithoutFlwExecutionsInput, Prisma.ProcessedEventsUncheckedUpdateWithoutFlwExecutionsInput>;
+};
+export type ProcessedEventsUpdateWithoutFlwExecutionsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    eventKey?: Prisma.StringFieldUpdateOperationsInput | string;
+    processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    Flw?: Prisma.FlwUpdateOneRequiredWithoutProcessedEventsNestedInput;
+};
+export type ProcessedEventsUncheckedUpdateWithoutFlwExecutionsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    eventKey?: Prisma.StringFieldUpdateOperationsInput | string;
+    flwId?: Prisma.StringFieldUpdateOperationsInput | string;
+    processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type ProcessedEventsCreateManyFlwInput = {
     id?: string;
     eventKey: string;
+    flwExecutionId?: string | null;
     processedAt?: Date | string;
 };
 export type ProcessedEventsUpdateWithoutFlwInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     eventKey?: Prisma.StringFieldUpdateOperationsInput | string;
     processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    FlwExecutions?: Prisma.FlwExecutionsUpdateOneWithoutProcessedEventsNestedInput;
 };
 export type ProcessedEventsUncheckedUpdateWithoutFlwInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     eventKey?: Prisma.StringFieldUpdateOperationsInput | string;
+    flwExecutionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type ProcessedEventsUncheckedUpdateManyWithoutFlwInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     eventKey?: Prisma.StringFieldUpdateOperationsInput | string;
+    flwExecutionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     processedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type ProcessedEventsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     eventKey?: boolean;
     flwId?: boolean;
+    flwExecutionId?: boolean;
     processedAt?: boolean;
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
+    FlwExecutions?: boolean | Prisma.ProcessedEvents$FlwExecutionsArgs<ExtArgs>;
 }, ExtArgs["result"]["processedEvents"]>;
 export type ProcessedEventsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     eventKey?: boolean;
     flwId?: boolean;
+    flwExecutionId?: boolean;
     processedAt?: boolean;
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
+    FlwExecutions?: boolean | Prisma.ProcessedEvents$FlwExecutionsArgs<ExtArgs>;
 }, ExtArgs["result"]["processedEvents"]>;
 export type ProcessedEventsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     eventKey?: boolean;
     flwId?: boolean;
+    flwExecutionId?: boolean;
     processedAt?: boolean;
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
+    FlwExecutions?: boolean | Prisma.ProcessedEvents$FlwExecutionsArgs<ExtArgs>;
 }, ExtArgs["result"]["processedEvents"]>;
 export type ProcessedEventsSelectScalar = {
     id?: boolean;
     eventKey?: boolean;
     flwId?: boolean;
+    flwExecutionId?: boolean;
     processedAt?: boolean;
 };
-export type ProcessedEventsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "eventKey" | "flwId" | "processedAt", ExtArgs["result"]["processedEvents"]>;
+export type ProcessedEventsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "eventKey" | "flwId" | "flwExecutionId" | "processedAt", ExtArgs["result"]["processedEvents"]>;
 export type ProcessedEventsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
+    FlwExecutions?: boolean | Prisma.ProcessedEvents$FlwExecutionsArgs<ExtArgs>;
 };
 export type ProcessedEventsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
+    FlwExecutions?: boolean | Prisma.ProcessedEvents$FlwExecutionsArgs<ExtArgs>;
 };
 export type ProcessedEventsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
+    FlwExecutions?: boolean | Prisma.ProcessedEvents$FlwExecutionsArgs<ExtArgs>;
 };
 export type $ProcessedEventsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     name: "ProcessedEvents";
     objects: {
         Flw: Prisma.$FlwPayload<ExtArgs>;
+        FlwExecutions: Prisma.$FlwExecutionsPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: string;
         eventKey: string;
         flwId: string;
+        flwExecutionId: string | null;
         processedAt: Date;
     }, ExtArgs["result"]["processedEvents"]>;
     composites: {};
@@ -709,6 +821,7 @@ export interface ProcessedEventsDelegate<ExtArgs extends runtime.Types.Extension
 export interface Prisma__ProcessedEventsClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
     Flw<T extends Prisma.FlwDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FlwDefaultArgs<ExtArgs>>): Prisma.Prisma__FlwClient<runtime.Types.Result.GetResult<Prisma.$FlwPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
+    FlwExecutions<T extends Prisma.ProcessedEvents$FlwExecutionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProcessedEvents$FlwExecutionsArgs<ExtArgs>>): Prisma.Prisma__FlwExecutionsClient<runtime.Types.Result.GetResult<Prisma.$FlwExecutionsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -737,6 +850,7 @@ export interface ProcessedEventsFieldRefs {
     readonly id: Prisma.FieldRef<"ProcessedEvents", 'String'>;
     readonly eventKey: Prisma.FieldRef<"ProcessedEvents", 'String'>;
     readonly flwId: Prisma.FieldRef<"ProcessedEvents", 'String'>;
+    readonly flwExecutionId: Prisma.FieldRef<"ProcessedEvents", 'String'>;
     readonly processedAt: Prisma.FieldRef<"ProcessedEvents", 'DateTime'>;
 }
 /**
@@ -1115,6 +1229,24 @@ export type ProcessedEventsDeleteManyArgs<ExtArgs extends runtime.Types.Extensio
      * Limit how many ProcessedEvents to delete.
      */
     limit?: number;
+};
+/**
+ * ProcessedEvents.FlwExecutions
+ */
+export type ProcessedEvents$FlwExecutionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FlwExecutions
+     */
+    select?: Prisma.FlwExecutionsSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the FlwExecutions
+     */
+    omit?: Prisma.FlwExecutionsOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.FlwExecutionsInclude<ExtArgs> | null;
+    where?: Prisma.FlwExecutionsWhereInput;
 };
 /**
  * ProcessedEvents without action

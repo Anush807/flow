@@ -2,35 +2,72 @@ import { randomUUID } from "node:crypto";
 import { Worker } from "bullmq";
 import { prisma } from "../lib/prisma.js";
 import { Prisma } from "../generated/prisma/client.js";
-import { stepQueue } from "./redis-queue.js";
+import { stepQueue, redisConnection } from "./redis-queue.js";
+import { executeIntegration } from "./integrations/registy.js";
+// ----------------------------------------------------------------
+// Helpers
+// ----------------------------------------------------------------
 function toJsonValue(value) {
     if (value === undefined) {
         return Prisma.JsonNull;
     }
     return JSON.parse(JSON.stringify(value));
 }
-console.log("Worker process started");
+// ----------------------------------------------------------------
+// Worker
+// ----------------------------------------------------------------
+console.log("Step execution worker starting…");
 const worker = new Worker("step-execution-worker", async (job) => {
-    console.log("worker is running");
     const { stepExecutionId } = job.data;
-    if (!stepExecutionId)
+    if (!stepExecutionId) {
+        console.warn(`Job ${job.id} is missing stepExecutionId – skipping`);
         return;
+    }
     await processStep(stepExecutionId);
 }, {
-    connection: {
-        host: "127.0.0.1",
-        port: 6379,
-    },
+    connection: redisConnection,
+    concurrency: parseInt(process.env["WORKER_CONCURRENCY"] ?? "10", 10),
 });
+worker.on("completed", (job) => {
+    console.log(`Job ${job.id} completed – stepExecutionId: ${job.data.stepExecutionId}`);
+});
+worker.on("failed", (job, err) => {
+    console.error(`Job ${job?.id} failed – stepExecutionId: ${job?.data?.stepExecutionId}`, err);
+});
+worker.on("error", (err) => {
+    console.error("Worker error:", err);
+});
+// ----------------------------------------------------------------
+// Graceful shutdown
+// ----------------------------------------------------------------
+async function shutdown(signal) {
+    console.log(`Received ${signal} – shutting down worker gracefully…`);
+    try {
+        await worker.close();
+        await prisma.$disconnect();
+        console.log("Worker shut down cleanly");
+        process.exit(0);
+    }
+    catch (err) {
+        console.error("Error during shutdown:", err);
+        process.exit(1);
+    }
+}
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
+// ----------------------------------------------------------------
+// Core step processor
+// ----------------------------------------------------------------
 async function processStep(stepExecutionId) {
     const step = await claimStep(stepExecutionId);
     if (!step) {
+        // Already claimed by another worker instance or not in Pending state.
+        console.log(`Step ${stepExecutionId} already claimed or not found – skipping`);
         return;
     }
     let outputPayload;
     try {
-        const result = await integrationFunction(step);
-        outputPayload = result.outputPayload;
+        outputPayload = await runIntegration(step);
     }
     catch (err) {
         await failureHandler(step, err);
@@ -38,6 +75,9 @@ async function processStep(stepExecutionId) {
     }
     await onSuccessFunction(step, outputPayload);
 }
+// ----------------------------------------------------------------
+// Claim step (optimistic lock via status guard)
+// ----------------------------------------------------------------
 async function claimStep(stepExecutionId) {
     const now = new Date();
     const claimed = await prisma.flwExecutionSteps.updateMany({
@@ -51,17 +91,14 @@ async function claimStep(stepExecutionId) {
             nextRetryAt: null,
         },
     });
-    if (claimed.count === 0) {
+    if (claimed.count === 0)
         return null;
-    }
     const step = await prisma.flwExecutionSteps.findUnique({
-        where: {
-            id: stepExecutionId,
-        },
+        where: { id: stepExecutionId },
     });
-    if (!step) {
+    if (!step)
         return null;
-    }
+    // Promote the parent execution to Running only if it is still Pending.
     await prisma.flwExecutions.updateMany({
         where: {
             id: step.flwExecutionId,
@@ -74,30 +111,22 @@ async function claimStep(stepExecutionId) {
     });
     return step;
 }
+// ----------------------------------------------------------------
+// Context builder
+// ----------------------------------------------------------------
 async function buildStepContext(step) {
     const execution = await prisma.flwExecutions.findUnique({
-        where: {
-            id: step.flwExecutionId,
-        },
-        select: {
-            triggerPayload: true,
-        },
+        where: { id: step.flwExecutionId },
+        select: { triggerPayload: true },
     });
     const previousSteps = await prisma.flwExecutionSteps.findMany({
         where: {
             flwExecutionId: step.flwExecutionId,
-            id: {
-                not: step.id,
-            },
+            id: { not: step.id },
             status: "Success",
         },
-        orderBy: {
-            startedAt: "asc",
-        },
-        select: {
-            flwStepId: true,
-            outputPayload: true,
-        },
+        orderBy: { startedAt: "asc" },
+        select: { flwStepId: true, outputPayload: true },
     });
     return {
         triggerPayload: execution?.triggerPayload ?? null,
@@ -107,6 +136,9 @@ async function buildStepContext(step) {
         })),
     };
 }
+// ----------------------------------------------------------------
+// Template resolution  {{ trigger.x }}  {{ steps.<id>.x }}
+// ----------------------------------------------------------------
 function resolvePath(source, path) {
     let current = source;
     for (const segment of path) {
@@ -137,51 +169,44 @@ function resolveTemplate(template, context) {
     });
 }
 function resolveInputMapping(value, context) {
-    if (typeof value === "string") {
+    if (typeof value === "string")
         return resolveTemplate(value, context);
-    }
-    if (Array.isArray(value)) {
+    if (Array.isArray(value))
         return value.map((item) => resolveInputMapping(item, context));
-    }
     if (value && typeof value === "object") {
-        return Object.fromEntries(Object.entries(value).map(([key, nestedValue]) => [
-            key,
-            resolveInputMapping(nestedValue, context),
+        return Object.fromEntries(Object.entries(value).map(([k, v]) => [
+            k,
+            resolveInputMapping(v, context),
         ]));
     }
     return value;
 }
-async function integrationFunction(step) {
+// ----------------------------------------------------------------
+// Integration runner  (replaces the stub integrationFunction)
+// ----------------------------------------------------------------
+async function runIntegration(step) {
     const definition = await prisma.flwSteps.findUnique({
-        where: {
-            id: step.flwStepId,
-        },
+        where: { id: step.flwStepId },
     });
     if (!definition) {
-        throw new Error("Definition step not found");
+        throw new Error(`Step definition not found for flwStepId: ${step.flwStepId}`);
+    }
+    if (!definition.operationKey) {
+        throw new Error(`Step operation not found for flwStepId: ${step.flwStepId}`);
     }
     const context = await buildStepContext(step);
     const resolvedInput = resolveInputMapping(definition.inputMapping, context);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return {
-        outputPayload: {
-            integrationKey: definition.integrationKey,
-            operationKey: definition.operationKey,
-            configPayload: definition.configPayload,
-            input: resolvedInput,
-            triggerPayload: context.triggerPayload,
-            processedAt: new Date().toISOString(),
-        },
-    };
+    const result = await executeIntegration(definition.integrationKey, definition.operationKey, resolvedInput);
+    return result.outputPayload;
 }
+// ----------------------------------------------------------------
+// Success handler – marks step done, chains next step or closes execution
+// ----------------------------------------------------------------
 async function onSuccessFunction(step, outputPayload) {
     const result = await prisma.$transaction(async (tx) => {
-        const current = await tx.flwSteps.findUnique({
-            where: { id: step.flwStepId },
-        });
-        if (!current) {
-            throw new Error("Definition step not found");
-        }
+        const current = await tx.flwSteps.findUnique({ where: { id: step.flwStepId } });
+        if (!current)
+            throw new Error(`Step definition not found for flwStepId: ${step.flwStepId}`);
         const nextDefinition = await tx.flwSteps.findUnique({
             where: {
                 flwId_position: {
@@ -211,57 +236,49 @@ async function onSuccessFunction(step, outputPayload) {
                     nextRetryAt: new Date(),
                 },
             });
-            return {
-                nextStepExecutionId: nextStepExecution.id,
-            };
+            return { nextStepExecutionId: nextStepExecution.id };
         }
         await tx.flwExecutions.update({
             where: { id: step.flwExecutionId },
-            data: {
-                status: "Success",
-                finishedAt: new Date(),
-            },
+            data: { status: "Success", finishedAt: new Date() },
         });
-        return {
-            nextStepExecutionId: null,
-        };
+        return { nextStepExecutionId: null };
     });
     if (result.nextStepExecutionId) {
-        await stepQueue.add("execute-step", {
-            stepExecutionId: result.nextStepExecutionId,
-        });
-        console.log(`Next job added to queue - StepExecutionId: ${result.nextStepExecutionId}`);
+        await stepQueue.add("execute-step", { stepExecutionId: result.nextStepExecutionId });
+        console.log(`Next step enqueued – stepExecutionId: ${result.nextStepExecutionId}`);
         return;
     }
-    console.log(`FlwExecution ${step.flwExecutionId} marked as Success`);
+    console.log(`Execution ${step.flwExecutionId} completed successfully`);
 }
+// ----------------------------------------------------------------
+// Failure handler – exponential backoff retry or terminal failure
+// ----------------------------------------------------------------
 async function failureHandler(step, err) {
     const maxRetries = 5;
-    const baseDelay = 5000;
+    const baseDelay = 5_000;
     const retryCount = step.retryCount + 1;
     const errorMessage = err instanceof Error ? err.message : String(err);
     if (retryCount > maxRetries) {
+        console.error(`Step ${step.id} exceeded max retries (${maxRetries}) – marking failed. Error: ${errorMessage}`);
         await prisma.flwExecutionSteps.update({
             where: { id: step.id },
             data: {
                 status: "Failed",
                 error: errorMessage,
-                errorPayload: {
-                    message: errorMessage,
-                },
+                errorPayload: toJsonValue({ message: errorMessage, retryCount }),
                 finishedAt: new Date(),
             },
         });
         await prisma.flwExecutions.update({
             where: { id: step.flwExecutionId },
-            data: {
-                status: "Failed",
-                finishedAt: new Date(),
-            },
+            data: { status: "Failed", finishedAt: new Date() },
         });
         return;
     }
-    const delay = baseDelay * Math.pow(2, step.retryCount);
+    // Use the incremented retryCount for the exponent so delay grows correctly:
+    // retry 1 → 10s, retry 2 → 20s, retry 3 → 40s, retry 4 → 80s, retry 5 → 160s
+    const delay = baseDelay * Math.pow(2, retryCount);
     const nextRetryAt = new Date(Date.now() + delay);
     await prisma.flwExecutionSteps.update({
         where: { id: step.id },
@@ -270,14 +287,15 @@ async function failureHandler(step, err) {
             retryCount,
             nextRetryAt,
             error: errorMessage,
-            errorPayload: {
+            errorPayload: toJsonValue({
                 message: errorMessage,
                 retryCount,
                 nextRetryAt: nextRetryAt.toISOString(),
-            },
+            }),
         },
     });
-    console.log(`Retry scheduled in ${delay / 1000}s`);
+    // Re-enqueue with BullMQ delay so the step is picked up after backoff elapses.
+    await stepQueue.add("execute-step", { stepExecutionId: step.id }, { delay });
+    console.log(`Step ${step.id} retry ${retryCount}/${maxRetries} scheduled in ${delay / 1000}s`);
 }
-void worker;
 //# sourceMappingURL=worker.js.map

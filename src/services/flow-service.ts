@@ -57,6 +57,9 @@ export async function createFlowDefinition(input: {
   name: string;
   steps?: FlowStepInput[] | undefined;
   nodeType?: "Trigger" | "Action" | undefined;
+  status?: "Draft" | "Active" | "Paused" | "Archived" | undefined;
+  eventKey?: string | undefined;
+  webhookKey?: string | undefined;
   configPayload?: unknown;
 }) {
   const normalizedSteps = normalizeSteps(
@@ -73,6 +76,9 @@ export async function createFlowDefinition(input: {
     const flw = await tx.flw.create({
       data: {
         name: input.name,
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        ...(input.eventKey !== undefined ? { eventKey: input.eventKey } : {}),
+        ...(input.webhookKey !== undefined ? { webhookKey: input.webhookKey } : {}),
       },
     });
 
@@ -112,11 +118,33 @@ export async function getFlowDefinition(flwId: string) {
   });
 }
 
+export async function listFlowDefinitions() {
+  return prisma.flw.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      FlwSteps: {
+        orderBy: {
+          position: "asc",
+        },
+      },
+      _count: {
+        select: {
+          FlwExecutions: true,
+        },
+      },
+    },
+  });
+}
+
 export async function updateFlowDefinition(
   flwId: string,
   input: {
     name?: string | undefined;
-    isActive?: boolean | undefined;
+    status?: "Draft" | "Active" | "Paused" | "Archived" | undefined;
+    eventKey?: string | null | undefined;
+    webhookKey?: string | null | undefined;
     steps?: FlowStepInput[] | undefined;
   },
 ) {
@@ -127,8 +155,16 @@ export async function updateFlowDefinition(
       flowData.name = input.name;
     }
 
-    if (input.isActive !== undefined) {
-      flowData.isActive = input.isActive;
+    if (input.status !== undefined) {
+      flowData.status = input.status;
+    }
+
+    if (input.eventKey !== undefined) {
+      flowData.eventKey = input.eventKey;
+    }
+
+    if (input.webhookKey !== undefined) {
+      flowData.webhookKey = input.webhookKey;
     }
 
     await tx.flw.update({

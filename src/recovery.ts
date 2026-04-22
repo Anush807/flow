@@ -1,57 +1,139 @@
-import { prisma } from "../lib/prisma.js";
 import { Queue } from "bullmq";
+import { prisma } from "../lib/prisma.js";
+import { eventTriggerQueue, redisConnection, stepQueue } from "./redis-queue.js";
 
-const stepQueue = new Queue("step-execution-worker", {
-  connection: {
-    host: "127.0.0.1",
-    port: 6379
-  }
+const recoveryQueue = new Queue("recovery-observer", {
+  connection: redisConnection,
 });
 
-async function recoveryLoop() {
-  console.log("Running recovery scan...");
+const recoveryIntervalMs = parseInt(process.env["RECOVERY_INTERVAL_MS"] ?? "15000", 10);
+const recoveryBatchSize = parseInt(process.env["RECOVERY_BATCH_SIZE"] ?? "50", 10);
 
+async function requeuePendingSteps() {
   const pendingSteps = await prisma.flwExecutionSteps.findMany({
     where: {
-      status: "Pending" ,
-      nextRetryAt:{
-        lte: new Date()
-      }
+      status: "Pending",
+      nextRetryAt: {
+        lte: new Date(),
+      },
     },
-    take: 50
+    take: recoveryBatchSize,
+    orderBy: {
+      nextRetryAt: "asc",
+    },
   });
 
   if (pendingSteps.length === 0) {
-    console.log("No stuck steps found");
+    console.log("Recovery: no pending steps ready for requeue");
     return;
   }
-
-  console.log(`Found ${pendingSteps.length} pending steps`);
 
   for (const step of pendingSteps) {
     try {
       await stepQueue.add("execute-step", {
-        stepExecutionId: step.id
+        stepExecutionId: step.id,
       });
 
-      console.log(`Requeued step ${step.id}`);
-
-    } catch (err) {
-      console.error("Failed to requeue step", step.id, err);
+      console.log(`Recovery: requeued step ${step.id}`);
+    } catch (error) {
+      console.error(`Recovery: failed to requeue step ${step.id}`, error);
     }
   }
 }
 
-async function startRecovery() {
-  console.log("Recovery service started");
+async function recoverStuckExecutions() {
+  const staleRunningExecutions = await prisma.flwExecutions.findMany({
+    where: {
+      status: "Running",
+      startedAt: {
+        lte: new Date(Date.now() - 5 * 60 * 1000),
+      },
+      FlwExecutionSteps: {
+        none: {
+          status: "Running",
+        },
+      },
+    },
+    include: {
+      FlwExecutionSteps: {
+        where: {
+          status: "Pending",
+          nextRetryAt: {
+            lte: new Date(),
+          },
+        },
+        orderBy: {
+          nextRetryAt: "asc",
+        },
+        take: 1,
+      },
+    },
+    take: recoveryBatchSize,
+  });
 
-  setInterval(async () => {
-    try {
-      await recoveryLoop();
-    } catch (err) {
-      console.error("Recovery error", err);
+  for (const execution of staleRunningExecutions) {
+    const [nextPendingStep] = execution.FlwExecutionSteps;
+
+    if (!nextPendingStep) {
+      continue;
     }
-  }, 15000); // every 15 seconds
+
+    try {
+      await stepQueue.add("execute-step", {
+        stepExecutionId: nextPendingStep.id,
+      });
+
+      console.log(
+        `Recovery: requeued stale execution ${execution.id} via step ${nextPendingStep.id}`,
+      );
+    } catch (error) {
+      console.error(
+        `Recovery: failed to requeue stale execution ${execution.id} via step ${nextPendingStep.id}`,
+        error,
+      );
+    }
+  }
 }
 
-startRecovery();
+async function recoveryLoop() {
+  await Promise.all([requeuePendingSteps(), recoverStuckExecutions()]);
+}
+
+let intervalHandle: NodeJS.Timeout | undefined;
+
+async function startRecovery() {
+  console.log(`Recovery service started (interval ${recoveryIntervalMs}ms)`);
+
+  await recoveryLoop();
+
+  intervalHandle = setInterval(() => {
+    void recoveryLoop().catch((error) => {
+      console.error("Recovery loop failed:", error);
+    });
+  }, recoveryIntervalMs);
+}
+
+async function shutdown(signal: string) {
+  console.log(`Received ${signal} - shutting down recovery service gracefully`);
+
+  if (intervalHandle) {
+    clearInterval(intervalHandle);
+  }
+
+  try {
+    await recoveryQueue.close();
+    await eventTriggerQueue.close();
+    await stepQueue.close();
+    await prisma.$disconnect();
+    console.log("Recovery service shut down cleanly");
+    process.exit(0);
+  } catch (error) {
+    console.error("Recovery service shutdown failed:", error);
+    process.exit(1);
+  }
+}
+
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
+
+void startRecovery();

@@ -659,7 +659,9 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 export declare const FlwScalarFieldEnum: {
     readonly id: "id";
     readonly name: "name";
-    readonly isActive: "isActive";
+    readonly eventKey: "eventKey";
+    readonly webhookKey: "webhookKey";
+    readonly status: "status";
     readonly createdAt: "createdAt";
 };
 export type FlwScalarFieldEnum = (typeof FlwScalarFieldEnum)[keyof typeof FlwScalarFieldEnum];
@@ -679,6 +681,7 @@ export declare const FlwExecutionsScalarFieldEnum: {
     readonly id: "id";
     readonly flwId: "flwId";
     readonly lockedBy: "lockedBy";
+    readonly idempotencyKey: "idempotencyKey";
     readonly status: "status";
     readonly lockedAt: "lockedAt";
     readonly triggerPayload: "triggerPayload";
@@ -706,6 +709,7 @@ export declare const ProcessedEventsScalarFieldEnum: {
     readonly id: "id";
     readonly eventKey: "eventKey";
     readonly flwId: "flwId";
+    readonly flwExecutionId: "flwExecutionId";
     readonly processedAt: "processedAt";
 };
 export type ProcessedEventsScalarFieldEnum = (typeof ProcessedEventsScalarFieldEnum)[keyof typeof ProcessedEventsScalarFieldEnum];
@@ -724,17 +728,17 @@ export declare const QueryMode: {
     readonly insensitive: "insensitive";
 };
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
+export declare const NullsOrder: {
+    readonly first: "first";
+    readonly last: "last";
+};
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
 export declare const JsonNullValueFilter: {
     readonly DbNull: runtime.DbNullClass;
     readonly JsonNull: runtime.JsonNullClass;
     readonly AnyNull: runtime.AnyNullClass;
 };
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];
-export declare const NullsOrder: {
-    readonly first: "first";
-    readonly last: "last";
-};
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder];
 /**
  * Field references
  */
@@ -747,9 +751,13 @@ export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 
  */
 export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>;
 /**
- * Reference to a field of type 'Boolean'
+ * Reference to a field of type 'FlwStatus'
  */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>;
+export type EnumFlwStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FlwStatus'>;
+/**
+ * Reference to a field of type 'FlwStatus[]'
+ */
+export type ListEnumFlwStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FlwStatus[]'>;
 /**
  * Reference to a field of type 'DateTime'
  */

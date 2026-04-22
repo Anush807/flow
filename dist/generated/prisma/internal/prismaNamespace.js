@@ -86,7 +86,9 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export const FlwScalarFieldEnum = {
     id: 'id',
     name: 'name',
-    isActive: 'isActive',
+    eventKey: 'eventKey',
+    webhookKey: 'webhookKey',
+    status: 'status',
     createdAt: 'createdAt'
 };
 export const FlwStepsScalarFieldEnum = {
@@ -104,6 +106,7 @@ export const FlwExecutionsScalarFieldEnum = {
     id: 'id',
     flwId: 'flwId',
     lockedBy: 'lockedBy',
+    idempotencyKey: 'idempotencyKey',
     status: 'status',
     lockedAt: 'lockedAt',
     triggerPayload: 'triggerPayload',
@@ -129,6 +132,7 @@ export const ProcessedEventsScalarFieldEnum = {
     id: 'id',
     eventKey: 'eventKey',
     flwId: 'flwId',
+    flwExecutionId: 'flwExecutionId',
     processedAt: 'processedAt'
 };
 export const SortOrder = {
@@ -143,14 +147,14 @@ export const QueryMode = {
     default: 'default',
     insensitive: 'insensitive'
 };
+export const NullsOrder = {
+    first: 'first',
+    last: 'last'
+};
 export const JsonNullValueFilter = {
     DbNull: DbNull,
     JsonNull: JsonNull,
     AnyNull: AnyNull
-};
-export const NullsOrder = {
-    first: 'first',
-    last: 'last'
 };
 export const defineExtension = runtime.Extensions.defineExtension;
 //# sourceMappingURL=prismaNamespace.js.map

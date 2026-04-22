@@ -15,6 +15,7 @@ export type FlwExecutionsMinAggregateOutputType = {
     id: string | null;
     flwId: string | null;
     lockedBy: string | null;
+    idempotencyKey: string | null;
     status: $Enums.FlwExecutionStatus | null;
     lockedAt: Date | null;
     triggeredAt: Date | null;
@@ -25,6 +26,7 @@ export type FlwExecutionsMaxAggregateOutputType = {
     id: string | null;
     flwId: string | null;
     lockedBy: string | null;
+    idempotencyKey: string | null;
     status: $Enums.FlwExecutionStatus | null;
     lockedAt: Date | null;
     triggeredAt: Date | null;
@@ -35,6 +37,7 @@ export type FlwExecutionsCountAggregateOutputType = {
     id: number;
     flwId: number;
     lockedBy: number;
+    idempotencyKey: number;
     status: number;
     lockedAt: number;
     triggerPayload: number;
@@ -47,6 +50,7 @@ export type FlwExecutionsMinAggregateInputType = {
     id?: true;
     flwId?: true;
     lockedBy?: true;
+    idempotencyKey?: true;
     status?: true;
     lockedAt?: true;
     triggeredAt?: true;
@@ -57,6 +61,7 @@ export type FlwExecutionsMaxAggregateInputType = {
     id?: true;
     flwId?: true;
     lockedBy?: true;
+    idempotencyKey?: true;
     status?: true;
     lockedAt?: true;
     triggeredAt?: true;
@@ -67,6 +72,7 @@ export type FlwExecutionsCountAggregateInputType = {
     id?: true;
     flwId?: true;
     lockedBy?: true;
+    idempotencyKey?: true;
     status?: true;
     lockedAt?: true;
     triggerPayload?: true;
@@ -141,6 +147,7 @@ export type FlwExecutionsGroupByOutputType = {
     id: string;
     flwId: string;
     lockedBy: string | null;
+    idempotencyKey: string | null;
     status: $Enums.FlwExecutionStatus;
     lockedAt: Date | null;
     triggerPayload: runtime.JsonValue | null;
@@ -161,6 +168,7 @@ export type FlwExecutionsWhereInput = {
     id?: Prisma.StringFilter<"FlwExecutions"> | string;
     flwId?: Prisma.StringFilter<"FlwExecutions"> | string;
     lockedBy?: Prisma.StringNullableFilter<"FlwExecutions"> | string | null;
+    idempotencyKey?: Prisma.StringNullableFilter<"FlwExecutions"> | string | null;
     status?: Prisma.EnumFlwExecutionStatusFilter<"FlwExecutions"> | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.DateTimeNullableFilter<"FlwExecutions"> | Date | string | null;
     triggerPayload?: Prisma.JsonNullableFilter<"FlwExecutions">;
@@ -169,11 +177,13 @@ export type FlwExecutionsWhereInput = {
     finishedAt?: Prisma.DateTimeNullableFilter<"FlwExecutions"> | Date | string | null;
     Flw?: Prisma.XOR<Prisma.FlwScalarRelationFilter, Prisma.FlwWhereInput>;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsListRelationFilter;
+    ProcessedEvents?: Prisma.XOR<Prisma.ProcessedEventsNullableScalarRelationFilter, Prisma.ProcessedEventsWhereInput> | null;
 };
 export type FlwExecutionsOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
     lockedBy?: Prisma.SortOrderInput | Prisma.SortOrder;
+    idempotencyKey?: Prisma.SortOrderInput | Prisma.SortOrder;
     status?: Prisma.SortOrder;
     lockedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     triggerPayload?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -182,6 +192,7 @@ export type FlwExecutionsOrderByWithRelationInput = {
     finishedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     Flw?: Prisma.FlwOrderByWithRelationInput;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsOrderByRelationAggregateInput;
+    ProcessedEvents?: Prisma.ProcessedEventsOrderByWithRelationInput;
 };
 export type FlwExecutionsWhereUniqueInput = Prisma.AtLeast<{
     id?: string;
@@ -190,6 +201,7 @@ export type FlwExecutionsWhereUniqueInput = Prisma.AtLeast<{
     NOT?: Prisma.FlwExecutionsWhereInput | Prisma.FlwExecutionsWhereInput[];
     flwId?: Prisma.StringFilter<"FlwExecutions"> | string;
     lockedBy?: Prisma.StringNullableFilter<"FlwExecutions"> | string | null;
+    idempotencyKey?: Prisma.StringNullableFilter<"FlwExecutions"> | string | null;
     status?: Prisma.EnumFlwExecutionStatusFilter<"FlwExecutions"> | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.DateTimeNullableFilter<"FlwExecutions"> | Date | string | null;
     triggerPayload?: Prisma.JsonNullableFilter<"FlwExecutions">;
@@ -198,11 +210,13 @@ export type FlwExecutionsWhereUniqueInput = Prisma.AtLeast<{
     finishedAt?: Prisma.DateTimeNullableFilter<"FlwExecutions"> | Date | string | null;
     Flw?: Prisma.XOR<Prisma.FlwScalarRelationFilter, Prisma.FlwWhereInput>;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsListRelationFilter;
+    ProcessedEvents?: Prisma.XOR<Prisma.ProcessedEventsNullableScalarRelationFilter, Prisma.ProcessedEventsWhereInput> | null;
 }, "id">;
 export type FlwExecutionsOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
     lockedBy?: Prisma.SortOrderInput | Prisma.SortOrder;
+    idempotencyKey?: Prisma.SortOrderInput | Prisma.SortOrder;
     status?: Prisma.SortOrder;
     lockedAt?: Prisma.SortOrderInput | Prisma.SortOrder;
     triggerPayload?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -220,6 +234,7 @@ export type FlwExecutionsScalarWhereWithAggregatesInput = {
     id?: Prisma.StringWithAggregatesFilter<"FlwExecutions"> | string;
     flwId?: Prisma.StringWithAggregatesFilter<"FlwExecutions"> | string;
     lockedBy?: Prisma.StringNullableWithAggregatesFilter<"FlwExecutions"> | string | null;
+    idempotencyKey?: Prisma.StringNullableWithAggregatesFilter<"FlwExecutions"> | string | null;
     status?: Prisma.EnumFlwExecutionStatusWithAggregatesFilter<"FlwExecutions"> | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"FlwExecutions"> | Date | string | null;
     triggerPayload?: Prisma.JsonNullableWithAggregatesFilter<"FlwExecutions">;
@@ -230,6 +245,7 @@ export type FlwExecutionsScalarWhereWithAggregatesInput = {
 export type FlwExecutionsCreateInput = {
     id?: string;
     lockedBy?: string | null;
+    idempotencyKey?: string | null;
     status: $Enums.FlwExecutionStatus;
     lockedAt?: Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -238,11 +254,13 @@ export type FlwExecutionsCreateInput = {
     finishedAt?: Date | string | null;
     Flw: Prisma.FlwCreateNestedOneWithoutFlwExecutionsInput;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsCreateNestedManyWithoutFlwExecutionsInput;
+    ProcessedEvents?: Prisma.ProcessedEventsCreateNestedOneWithoutFlwExecutionsInput;
 };
 export type FlwExecutionsUncheckedCreateInput = {
     id?: string;
     flwId: string;
     lockedBy?: string | null;
+    idempotencyKey?: string | null;
     status: $Enums.FlwExecutionStatus;
     lockedAt?: Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -250,10 +268,12 @@ export type FlwExecutionsUncheckedCreateInput = {
     startedAt?: Date | string | null;
     finishedAt?: Date | string | null;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedCreateNestedManyWithoutFlwExecutionsInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUncheckedCreateNestedOneWithoutFlwExecutionsInput;
 };
 export type FlwExecutionsUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -262,11 +282,13 @@ export type FlwExecutionsUpdateInput = {
     finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     Flw?: Prisma.FlwUpdateOneRequiredWithoutFlwExecutionsNestedInput;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUpdateManyWithoutFlwExecutionsNestedInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUpdateOneWithoutFlwExecutionsNestedInput;
 };
 export type FlwExecutionsUncheckedUpdateInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     flwId?: Prisma.StringFieldUpdateOperationsInput | string;
     lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -274,11 +296,13 @@ export type FlwExecutionsUncheckedUpdateInput = {
     startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedUpdateManyWithoutFlwExecutionsNestedInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUncheckedUpdateOneWithoutFlwExecutionsNestedInput;
 };
 export type FlwExecutionsCreateManyInput = {
     id?: string;
     flwId: string;
     lockedBy?: string | null;
+    idempotencyKey?: string | null;
     status: $Enums.FlwExecutionStatus;
     lockedAt?: Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -289,6 +313,7 @@ export type FlwExecutionsCreateManyInput = {
 export type FlwExecutionsUpdateManyMutationInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -300,6 +325,7 @@ export type FlwExecutionsUncheckedUpdateManyInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     flwId?: Prisma.StringFieldUpdateOperationsInput | string;
     lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -319,6 +345,7 @@ export type FlwExecutionsCountOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
     lockedBy?: Prisma.SortOrder;
+    idempotencyKey?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     lockedAt?: Prisma.SortOrder;
     triggerPayload?: Prisma.SortOrder;
@@ -330,6 +357,7 @@ export type FlwExecutionsMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
     lockedBy?: Prisma.SortOrder;
+    idempotencyKey?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     lockedAt?: Prisma.SortOrder;
     triggeredAt?: Prisma.SortOrder;
@@ -340,6 +368,7 @@ export type FlwExecutionsMinOrderByAggregateInput = {
     id?: Prisma.SortOrder;
     flwId?: Prisma.SortOrder;
     lockedBy?: Prisma.SortOrder;
+    idempotencyKey?: Prisma.SortOrder;
     status?: Prisma.SortOrder;
     lockedAt?: Prisma.SortOrder;
     triggeredAt?: Prisma.SortOrder;
@@ -349,6 +378,10 @@ export type FlwExecutionsMinOrderByAggregateInput = {
 export type FlwExecutionsScalarRelationFilter = {
     is?: Prisma.FlwExecutionsWhereInput;
     isNot?: Prisma.FlwExecutionsWhereInput;
+};
+export type FlwExecutionsNullableScalarRelationFilter = {
+    is?: Prisma.FlwExecutionsWhereInput | null;
+    isNot?: Prisma.FlwExecutionsWhereInput | null;
 };
 export type FlwExecutionsCreateNestedManyWithoutFlwInput = {
     create?: Prisma.XOR<Prisma.FlwExecutionsCreateWithoutFlwInput, Prisma.FlwExecutionsUncheckedCreateWithoutFlwInput> | Prisma.FlwExecutionsCreateWithoutFlwInput[] | Prisma.FlwExecutionsUncheckedCreateWithoutFlwInput[];
@@ -406,9 +439,24 @@ export type FlwExecutionsUpdateOneRequiredWithoutFlwExecutionStepsNestedInput = 
     connect?: Prisma.FlwExecutionsWhereUniqueInput;
     update?: Prisma.XOR<Prisma.XOR<Prisma.FlwExecutionsUpdateToOneWithWhereWithoutFlwExecutionStepsInput, Prisma.FlwExecutionsUpdateWithoutFlwExecutionStepsInput>, Prisma.FlwExecutionsUncheckedUpdateWithoutFlwExecutionStepsInput>;
 };
+export type FlwExecutionsCreateNestedOneWithoutProcessedEventsInput = {
+    create?: Prisma.XOR<Prisma.FlwExecutionsCreateWithoutProcessedEventsInput, Prisma.FlwExecutionsUncheckedCreateWithoutProcessedEventsInput>;
+    connectOrCreate?: Prisma.FlwExecutionsCreateOrConnectWithoutProcessedEventsInput;
+    connect?: Prisma.FlwExecutionsWhereUniqueInput;
+};
+export type FlwExecutionsUpdateOneWithoutProcessedEventsNestedInput = {
+    create?: Prisma.XOR<Prisma.FlwExecutionsCreateWithoutProcessedEventsInput, Prisma.FlwExecutionsUncheckedCreateWithoutProcessedEventsInput>;
+    connectOrCreate?: Prisma.FlwExecutionsCreateOrConnectWithoutProcessedEventsInput;
+    upsert?: Prisma.FlwExecutionsUpsertWithoutProcessedEventsInput;
+    disconnect?: Prisma.FlwExecutionsWhereInput | boolean;
+    delete?: Prisma.FlwExecutionsWhereInput | boolean;
+    connect?: Prisma.FlwExecutionsWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.FlwExecutionsUpdateToOneWithWhereWithoutProcessedEventsInput, Prisma.FlwExecutionsUpdateWithoutProcessedEventsInput>, Prisma.FlwExecutionsUncheckedUpdateWithoutProcessedEventsInput>;
+};
 export type FlwExecutionsCreateWithoutFlwInput = {
     id?: string;
     lockedBy?: string | null;
+    idempotencyKey?: string | null;
     status: $Enums.FlwExecutionStatus;
     lockedAt?: Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -416,10 +464,12 @@ export type FlwExecutionsCreateWithoutFlwInput = {
     startedAt?: Date | string | null;
     finishedAt?: Date | string | null;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsCreateNestedManyWithoutFlwExecutionsInput;
+    ProcessedEvents?: Prisma.ProcessedEventsCreateNestedOneWithoutFlwExecutionsInput;
 };
 export type FlwExecutionsUncheckedCreateWithoutFlwInput = {
     id?: string;
     lockedBy?: string | null;
+    idempotencyKey?: string | null;
     status: $Enums.FlwExecutionStatus;
     lockedAt?: Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -427,6 +477,7 @@ export type FlwExecutionsUncheckedCreateWithoutFlwInput = {
     startedAt?: Date | string | null;
     finishedAt?: Date | string | null;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedCreateNestedManyWithoutFlwExecutionsInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUncheckedCreateNestedOneWithoutFlwExecutionsInput;
 };
 export type FlwExecutionsCreateOrConnectWithoutFlwInput = {
     where: Prisma.FlwExecutionsWhereUniqueInput;
@@ -456,6 +507,7 @@ export type FlwExecutionsScalarWhereInput = {
     id?: Prisma.StringFilter<"FlwExecutions"> | string;
     flwId?: Prisma.StringFilter<"FlwExecutions"> | string;
     lockedBy?: Prisma.StringNullableFilter<"FlwExecutions"> | string | null;
+    idempotencyKey?: Prisma.StringNullableFilter<"FlwExecutions"> | string | null;
     status?: Prisma.EnumFlwExecutionStatusFilter<"FlwExecutions"> | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.DateTimeNullableFilter<"FlwExecutions"> | Date | string | null;
     triggerPayload?: Prisma.JsonNullableFilter<"FlwExecutions">;
@@ -466,6 +518,7 @@ export type FlwExecutionsScalarWhereInput = {
 export type FlwExecutionsCreateWithoutFlwExecutionStepsInput = {
     id?: string;
     lockedBy?: string | null;
+    idempotencyKey?: string | null;
     status: $Enums.FlwExecutionStatus;
     lockedAt?: Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -473,17 +526,20 @@ export type FlwExecutionsCreateWithoutFlwExecutionStepsInput = {
     startedAt?: Date | string | null;
     finishedAt?: Date | string | null;
     Flw: Prisma.FlwCreateNestedOneWithoutFlwExecutionsInput;
+    ProcessedEvents?: Prisma.ProcessedEventsCreateNestedOneWithoutFlwExecutionsInput;
 };
 export type FlwExecutionsUncheckedCreateWithoutFlwExecutionStepsInput = {
     id?: string;
     flwId: string;
     lockedBy?: string | null;
+    idempotencyKey?: string | null;
     status: $Enums.FlwExecutionStatus;
     lockedAt?: Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     triggeredAt?: Date | string;
     startedAt?: Date | string | null;
     finishedAt?: Date | string | null;
+    ProcessedEvents?: Prisma.ProcessedEventsUncheckedCreateNestedOneWithoutFlwExecutionsInput;
 };
 export type FlwExecutionsCreateOrConnectWithoutFlwExecutionStepsInput = {
     where: Prisma.FlwExecutionsWhereUniqueInput;
@@ -501,6 +557,7 @@ export type FlwExecutionsUpdateToOneWithWhereWithoutFlwExecutionStepsInput = {
 export type FlwExecutionsUpdateWithoutFlwExecutionStepsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -508,21 +565,90 @@ export type FlwExecutionsUpdateWithoutFlwExecutionStepsInput = {
     startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     Flw?: Prisma.FlwUpdateOneRequiredWithoutFlwExecutionsNestedInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUpdateOneWithoutFlwExecutionsNestedInput;
 };
 export type FlwExecutionsUncheckedUpdateWithoutFlwExecutionStepsInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     flwId?: Prisma.StringFieldUpdateOperationsInput | string;
     lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
     triggeredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    ProcessedEvents?: Prisma.ProcessedEventsUncheckedUpdateOneWithoutFlwExecutionsNestedInput;
+};
+export type FlwExecutionsCreateWithoutProcessedEventsInput = {
+    id?: string;
+    lockedBy?: string | null;
+    idempotencyKey?: string | null;
+    status: $Enums.FlwExecutionStatus;
+    lockedAt?: Date | string | null;
+    triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    triggeredAt?: Date | string;
+    startedAt?: Date | string | null;
+    finishedAt?: Date | string | null;
+    Flw: Prisma.FlwCreateNestedOneWithoutFlwExecutionsInput;
+    FlwExecutionSteps?: Prisma.FlwExecutionStepsCreateNestedManyWithoutFlwExecutionsInput;
+};
+export type FlwExecutionsUncheckedCreateWithoutProcessedEventsInput = {
+    id?: string;
+    flwId: string;
+    lockedBy?: string | null;
+    idempotencyKey?: string | null;
+    status: $Enums.FlwExecutionStatus;
+    lockedAt?: Date | string | null;
+    triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    triggeredAt?: Date | string;
+    startedAt?: Date | string | null;
+    finishedAt?: Date | string | null;
+    FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedCreateNestedManyWithoutFlwExecutionsInput;
+};
+export type FlwExecutionsCreateOrConnectWithoutProcessedEventsInput = {
+    where: Prisma.FlwExecutionsWhereUniqueInput;
+    create: Prisma.XOR<Prisma.FlwExecutionsCreateWithoutProcessedEventsInput, Prisma.FlwExecutionsUncheckedCreateWithoutProcessedEventsInput>;
+};
+export type FlwExecutionsUpsertWithoutProcessedEventsInput = {
+    update: Prisma.XOR<Prisma.FlwExecutionsUpdateWithoutProcessedEventsInput, Prisma.FlwExecutionsUncheckedUpdateWithoutProcessedEventsInput>;
+    create: Prisma.XOR<Prisma.FlwExecutionsCreateWithoutProcessedEventsInput, Prisma.FlwExecutionsUncheckedCreateWithoutProcessedEventsInput>;
+    where?: Prisma.FlwExecutionsWhereInput;
+};
+export type FlwExecutionsUpdateToOneWithWhereWithoutProcessedEventsInput = {
+    where?: Prisma.FlwExecutionsWhereInput;
+    data: Prisma.XOR<Prisma.FlwExecutionsUpdateWithoutProcessedEventsInput, Prisma.FlwExecutionsUncheckedUpdateWithoutProcessedEventsInput>;
+};
+export type FlwExecutionsUpdateWithoutProcessedEventsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
+    lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    triggeredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    Flw?: Prisma.FlwUpdateOneRequiredWithoutFlwExecutionsNestedInput;
+    FlwExecutionSteps?: Prisma.FlwExecutionStepsUpdateManyWithoutFlwExecutionsNestedInput;
+};
+export type FlwExecutionsUncheckedUpdateWithoutProcessedEventsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    flwId?: Prisma.StringFieldUpdateOperationsInput | string;
+    lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
+    lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
+    triggeredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
+    FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedUpdateManyWithoutFlwExecutionsNestedInput;
 };
 export type FlwExecutionsCreateManyFlwInput = {
     id?: string;
     lockedBy?: string | null;
+    idempotencyKey?: string | null;
     status: $Enums.FlwExecutionStatus;
     lockedAt?: Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -533,6 +659,7 @@ export type FlwExecutionsCreateManyFlwInput = {
 export type FlwExecutionsUpdateWithoutFlwInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -540,10 +667,12 @@ export type FlwExecutionsUpdateWithoutFlwInput = {
     startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUpdateManyWithoutFlwExecutionsNestedInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUpdateOneWithoutFlwExecutionsNestedInput;
 };
 export type FlwExecutionsUncheckedUpdateWithoutFlwInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -551,10 +680,12 @@ export type FlwExecutionsUncheckedUpdateWithoutFlwInput = {
     startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     FlwExecutionSteps?: Prisma.FlwExecutionStepsUncheckedUpdateManyWithoutFlwExecutionsNestedInput;
+    ProcessedEvents?: Prisma.ProcessedEventsUncheckedUpdateOneWithoutFlwExecutionsNestedInput;
 };
 export type FlwExecutionsUncheckedUpdateManyWithoutFlwInput = {
     id?: Prisma.StringFieldUpdateOperationsInput | string;
     lockedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    idempotencyKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     status?: Prisma.EnumFlwExecutionStatusFieldUpdateOperationsInput | $Enums.FlwExecutionStatus;
     lockedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null;
     triggerPayload?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -590,6 +721,7 @@ export type FlwExecutionsSelect<ExtArgs extends runtime.Types.Extensions.Interna
     id?: boolean;
     flwId?: boolean;
     lockedBy?: boolean;
+    idempotencyKey?: boolean;
     status?: boolean;
     lockedAt?: boolean;
     triggerPayload?: boolean;
@@ -598,12 +730,14 @@ export type FlwExecutionsSelect<ExtArgs extends runtime.Types.Extensions.Interna
     finishedAt?: boolean;
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
     FlwExecutionSteps?: boolean | Prisma.FlwExecutions$FlwExecutionStepsArgs<ExtArgs>;
+    ProcessedEvents?: boolean | Prisma.FlwExecutions$ProcessedEventsArgs<ExtArgs>;
     _count?: boolean | Prisma.FlwExecutionsCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["flwExecutions"]>;
 export type FlwExecutionsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
     flwId?: boolean;
     lockedBy?: boolean;
+    idempotencyKey?: boolean;
     status?: boolean;
     lockedAt?: boolean;
     triggerPayload?: boolean;
@@ -616,6 +750,7 @@ export type FlwExecutionsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
     id?: boolean;
     flwId?: boolean;
     lockedBy?: boolean;
+    idempotencyKey?: boolean;
     status?: boolean;
     lockedAt?: boolean;
     triggerPayload?: boolean;
@@ -628,6 +763,7 @@ export type FlwExecutionsSelectScalar = {
     id?: boolean;
     flwId?: boolean;
     lockedBy?: boolean;
+    idempotencyKey?: boolean;
     status?: boolean;
     lockedAt?: boolean;
     triggerPayload?: boolean;
@@ -635,10 +771,11 @@ export type FlwExecutionsSelectScalar = {
     startedAt?: boolean;
     finishedAt?: boolean;
 };
-export type FlwExecutionsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "flwId" | "lockedBy" | "status" | "lockedAt" | "triggerPayload" | "triggeredAt" | "startedAt" | "finishedAt", ExtArgs["result"]["flwExecutions"]>;
+export type FlwExecutionsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "flwId" | "lockedBy" | "idempotencyKey" | "status" | "lockedAt" | "triggerPayload" | "triggeredAt" | "startedAt" | "finishedAt", ExtArgs["result"]["flwExecutions"]>;
 export type FlwExecutionsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     Flw?: boolean | Prisma.FlwDefaultArgs<ExtArgs>;
     FlwExecutionSteps?: boolean | Prisma.FlwExecutions$FlwExecutionStepsArgs<ExtArgs>;
+    ProcessedEvents?: boolean | Prisma.FlwExecutions$ProcessedEventsArgs<ExtArgs>;
     _count?: boolean | Prisma.FlwExecutionsCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type FlwExecutionsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -652,11 +789,13 @@ export type $FlwExecutionsPayload<ExtArgs extends runtime.Types.Extensions.Inter
     objects: {
         Flw: Prisma.$FlwPayload<ExtArgs>;
         FlwExecutionSteps: Prisma.$FlwExecutionStepsPayload<ExtArgs>[];
+        ProcessedEvents: Prisma.$ProcessedEventsPayload<ExtArgs> | null;
     };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
         id: string;
         flwId: string;
         lockedBy: string | null;
+        idempotencyKey: string | null;
         status: $Enums.FlwExecutionStatus;
         lockedAt: Date | null;
         triggerPayload: runtime.JsonValue | null;
@@ -994,6 +1133,7 @@ export interface Prisma__FlwExecutionsClient<T, Null = never, ExtArgs extends ru
     readonly [Symbol.toStringTag]: "PrismaPromise";
     Flw<T extends Prisma.FlwDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FlwDefaultArgs<ExtArgs>>): Prisma.Prisma__FlwClient<runtime.Types.Result.GetResult<Prisma.$FlwPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>;
     FlwExecutionSteps<T extends Prisma.FlwExecutions$FlwExecutionStepsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FlwExecutions$FlwExecutionStepsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FlwExecutionStepsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    ProcessedEvents<T extends Prisma.FlwExecutions$ProcessedEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.FlwExecutions$ProcessedEventsArgs<ExtArgs>>): Prisma.Prisma__ProcessedEventsClient<runtime.Types.Result.GetResult<Prisma.$ProcessedEventsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1022,6 +1162,7 @@ export interface FlwExecutionsFieldRefs {
     readonly id: Prisma.FieldRef<"FlwExecutions", 'String'>;
     readonly flwId: Prisma.FieldRef<"FlwExecutions", 'String'>;
     readonly lockedBy: Prisma.FieldRef<"FlwExecutions", 'String'>;
+    readonly idempotencyKey: Prisma.FieldRef<"FlwExecutions", 'String'>;
     readonly status: Prisma.FieldRef<"FlwExecutions", 'FlwExecutionStatus'>;
     readonly lockedAt: Prisma.FieldRef<"FlwExecutions", 'DateTime'>;
     readonly triggerPayload: Prisma.FieldRef<"FlwExecutions", 'Json'>;
@@ -1428,6 +1569,24 @@ export type FlwExecutions$FlwExecutionStepsArgs<ExtArgs extends runtime.Types.Ex
     take?: number;
     skip?: number;
     distinct?: Prisma.FlwExecutionStepsScalarFieldEnum | Prisma.FlwExecutionStepsScalarFieldEnum[];
+};
+/**
+ * FlwExecutions.ProcessedEvents
+ */
+export type FlwExecutions$ProcessedEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedEvents
+     */
+    select?: Prisma.ProcessedEventsSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the ProcessedEvents
+     */
+    omit?: Prisma.ProcessedEventsOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.ProcessedEventsInclude<ExtArgs> | null;
+    where?: Prisma.ProcessedEventsWhereInput;
 };
 /**
  * FlwExecutions without action

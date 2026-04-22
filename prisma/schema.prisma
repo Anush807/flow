@@ -12,6 +12,13 @@ enum FlwStepType{
   Trigger
   Action
 } 
+
+enum FlwStatus {
+  Draft
+  Active
+  Paused
+  Archived
+}
   
 enum FlwExecutionStatus{
   Pending
@@ -21,13 +28,14 @@ enum FlwExecutionStatus{
 }
 
 model Flw{
-  id                          String @id @default(uuid())
-  // clerkUserId                 String        
+  id                          String @id @default(uuid())        
   name                        String
-  isActive                    Boolean    @default(true)
+  eventKey                    String?   @unique
+  webhookKey                  String? @unique  
   FlwSteps                    FlwSteps[]
-  FlwExecutions                FlwExecutions[]
+  FlwExecutions               FlwExecutions[]
   ProcessedEvents             ProcessedEvents[]
+  status                      FlwStatus @default(Draft)
   createdAt                   DateTime   @default(now())
 }
 
@@ -39,7 +47,7 @@ model FlwSteps{
   name                        String?
   position                    Int
   type                        FlwStepType
-  FlwExecutionSteps             FlwExecutionSteps[]
+  FlwExecutionSteps           FlwExecutionSteps[]
   integrationKey              String
   operationKey                String?
   configPayload               Json?
@@ -50,9 +58,11 @@ model FlwExecutions{
   id                          String @id @default(uuid())
   Flw              Flw        @relation(fields: [flwId], references: [id])
   flwId                       String
-  lockedBy                    String?                     
+  lockedBy                    String?  
+  idempotencyKey              String?                   
   status                      FlwExecutionStatus
   FlwExecutionSteps           FlwExecutionSteps[]                        
+  ProcessedEvents             ProcessedEvents?
   lockedAt                    DateTime?
   triggerPayload              Json?
   triggeredAt                 DateTime   @default(now())
@@ -88,5 +98,7 @@ model ProcessedEvents{
   eventKey                    String  @unique 
   Flw              Flw        @relation(fields: [flwId], references: [id])
   flwId                       String
+  flwExecutionId              String?  @unique
+  FlwExecutions               FlwExecutions? @relation(fields: [flwExecutionId], references: [id])
   processedAt                 DateTime   @default(now())
 }

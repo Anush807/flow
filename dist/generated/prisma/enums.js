@@ -11,6 +11,12 @@ export const FlwStepType = {
     Trigger: 'Trigger',
     Action: 'Action'
 };
+export const FlwStatus = {
+    Draft: 'Draft',
+    Active: 'Active',
+    Paused: 'Paused',
+    Archived: 'Archived'
+};
 export const FlwExecutionStatus = {
     Pending: 'Pending',
     Success: 'Success',
