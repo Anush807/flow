@@ -10,8 +10,8 @@ const app = express();
 const PORT = process.env.PORT;
 
 app.use(express.json());
-
 app.use("/flow", creatFlw);
+
 app.post("/webhooks/:webhookKey", (req, res) => {
   void webhookTriggerHandler(req, res).catch((error) => {
     console.error("Webhook trigger failed:", error);

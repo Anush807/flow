@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
-import { prisma } from "../lib/prisma.js";
-import { eventTriggerQueue, redisConnection, stepQueue } from "./redis-queue.js";
+import { prisma } from "../../lib/prisma.js";
+import { eventTriggerQueue, redisConnection, stepQueue } from "../async/redis-queue.js";
 
 const recoveryQueue = new Queue("recovery-observer", {
   connection: redisConnection,

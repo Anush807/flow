@@ -1,14 +1,12 @@
+import "../triggers/events.js"
 import { randomUUID } from "node:crypto";
 import { Worker } from "bullmq";
-import { prisma } from "../lib/prisma.js";
-import { Prisma } from "../generated/prisma/client.js";
-import type { FlwConditionLogicGate, FlwConditionOperator, FlwConditions, FlwExecutionSteps, FlwStepType, FlwSteps } from "../generated/prisma/client.js";
+import { prisma } from "../../lib/prisma.js";
+import { Prisma } from "../../generated/prisma/client.js";
+import type { FlwConditionLogicGate, FlwConditionOperator, FlwConditions, FlwExecutionSteps, FlwStepType, FlwSteps } from "../../generated/prisma/client.js";
 import { stepQueue, redisConnection } from "./redis-queue.js";
-import { executeIntegration } from "./integrations/registy.js";
+import { executeIntegration } from "../integrations/registy.js";
 
-// ----------------------------------------------------------------
-// Types
-// ----------------------------------------------------------------
 
 type StepContext = {
   triggerPayload: unknown;
@@ -101,6 +99,11 @@ async function processStep(stepExecutionId: string): Promise<void> {
 
   const definition = await getStepDefinition(step.flwStepId);
   const context = await buildStepContext(step);
+
+  if (definition.type === "Trigger") {
+  await onSuccessFunction(step, { skipped: true, reason: "trigger_step" }, context);
+  return;
+}
 
   // Flow-level conditions only on the very first root step
   const isFirstRootStep = definition.position === 1 && definition.parentStepId === null;
@@ -577,6 +580,7 @@ async function failureHandler(step: FlwExecutionSteps, err: unknown): Promise<vo
   const baseDelay = 5_000;
   const retryCount = step.retryCount + 1;
   const errorMessage = err instanceof Error ? err.message : String(err);
+  console.error(`Step ${step.id} failed with error:`, errorMessage);
 
   if (retryCount > maxRetries) {
     console.error(
@@ -613,7 +617,7 @@ async function failureHandler(step: FlwExecutionSteps, err: unknown): Promise<vo
       retryCount,
       nextRetryAt,
       error: errorMessage,
-      errorPayload: toJsonValue({
+      errorPayload: toJsonValue({ 
         message: errorMessage,
         retryCount,
         nextRetryAt: nextRetryAt.toISOString(),

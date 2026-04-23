@@ -218,58 +218,48 @@ export async function createFlowDefinition(input: {
 }) {
   const normalizedSteps = normalizeSteps(
     input.steps,
-    input.nodeType
-      ? {
-          type: input.nodeType,
-          configPayload: input.configPayload,
-        }
-      : undefined,
+    input.nodeType ? { type: input.nodeType, configPayload: input.configPayload } : undefined,
   );
 
-  return prisma.$transaction(async (tx) => {
-    const flw = await tx.flw.create({
-      data: {
-        name: input.name,
-        ...(input.status !== undefined ? { status: input.status } : {}),
-        ...(input.eventKey !== undefined ? { eventKey: input.eventKey } : {}),
-        ...(input.webhookKey !== undefined ? { webhookKey: input.webhookKey } : {}),
+  const flw = await prisma.flw.create({
+    data: {
+      name: input.name,
+      ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.eventKey !== undefined ? { eventKey: input.eventKey } : {}),
+      ...(input.webhookKey !== undefined ? { webhookKey: input.webhookKey } : {}),
+    },
+  });
+
+  await createStepsRecursive(prisma, flw.id, normalizedSteps, null, 0);
+
+  if (input.conditions && input.conditions.length > 0) {
+    const flowConditionRows = input.conditions.map((condition, index) => ({
+      flwId: flw.id,
+      flwStepId: null as string | null,
+      sourceType: condition.sourceType,
+      sourceStepId: null as string | null,
+      fieldPath: condition.fieldPath,
+      operator: condition.operator,
+      comparisonValue: toJsonValue(condition.comparisonValue),
+      logicGate: (condition.logicGate ?? "And") as "And" | "Or",
+      position: index + 1,
+    }));
+    await prisma.flwConditions.createMany({ data: flowConditionRows });
+  }
+
+  return prisma.flw.findUniqueOrThrow({
+    where: { id: flw.id },
+    include: {
+      FlwSteps: {
+        where: { parentStepId: null },
+        orderBy: { position: "asc" },
+        include: flowStepsInclude(),
       },
-    });
-
-    // Create steps recursively (handles branches + conditions)
-    await createStepsRecursive(tx, flw.id, normalizedSteps, null, 0);
-
-    // Create flow-level conditions
-    if (input.conditions && input.conditions.length > 0) {
-      const flowConditionRows = input.conditions.map((condition, index) => ({
-        flwId: flw.id,
-        flwStepId: null as string | null,
-        sourceType: condition.sourceType,
-        sourceStepId: null as string | null,
-        fieldPath: condition.fieldPath,
-        operator: condition.operator,
-        comparisonValue: toJsonValue(condition.comparisonValue),
-        logicGate: (condition.logicGate ?? "And") as "And" | "Or",
-        position: index + 1,
-      }));
-
-      await tx.flwConditions.createMany({ data: flowConditionRows });
-    }
-
-    return tx.flw.findUniqueOrThrow({
-      where: { id: flw.id },
-      include: {
-        FlwSteps: {
-          where: { parentStepId: null },
-          orderBy: { position: "asc" },
-          include: flowStepsInclude(),
-        },
-        FlwConditions: {
-          where: { flwStepId: null },
-          orderBy: { position: "asc" },
-        },
+      FlwConditions: {
+        where: { flwStepId: null },
+        orderBy: { position: "asc" },
       },
-    });
+    },
   });
 }
 
@@ -325,91 +315,66 @@ export async function updateFlowDefinition(
     steps?: FlowStepInput[] | undefined;
   },
 ) {
-  return prisma.$transaction(async (tx) => {
-    const flowData: Prisma.FlwUpdateInput = {};
+  const flowData: Prisma.FlwUpdateInput = {};
+  if (input.name !== undefined) flowData.name = input.name;
+  if (input.status !== undefined) flowData.status = input.status;
+  if (input.eventKey !== undefined) flowData.eventKey = input.eventKey;
+  if (input.webhookKey !== undefined) flowData.webhookKey = input.webhookKey;
 
-    if (input.name !== undefined) {
-      flowData.name = input.name;
+  await prisma.flw.update({ where: { id: flwId }, data: flowData });
+
+  if (input.steps) {
+    await prisma.flwConditions.deleteMany({ where: { flwId } });
+    await prisma.flwSteps.deleteMany({ where: { flwId, parentStepId: { not: null } } });
+    await prisma.flwSteps.deleteMany({ where: { flwId } });
+
+    const normalizedSteps = normalizeSteps(input.steps);
+    await createStepsRecursive(prisma, flwId, normalizedSteps, null, 0);
+
+    if (input.conditions && input.conditions.length > 0) {
+      const flowConditionRows = input.conditions.map((condition, index) => ({
+        flwId,
+        flwStepId: null as string | null,
+        sourceType: condition.sourceType,
+        sourceStepId: null as string | null,
+        fieldPath: condition.fieldPath,
+        operator: condition.operator,
+        comparisonValue: toJsonValue(condition.comparisonValue),
+        logicGate: (condition.logicGate ?? "And") as "And" | "Or",
+        position: index + 1,
+      }));
+      await prisma.flwConditions.createMany({ data: flowConditionRows });
     }
-
-    if (input.status !== undefined) {
-      flowData.status = input.status;
+  } else if (input.conditions !== undefined) {
+    await prisma.flwConditions.deleteMany({ where: { flwId, flwStepId: null } });
+    if (input.conditions.length > 0) {
+      const flowConditionRows = input.conditions.map((condition, index) => ({
+        flwId,
+        flwStepId: null as string | null,
+        sourceType: condition.sourceType,
+        sourceStepId: null as string | null,
+        fieldPath: condition.fieldPath,
+        operator: condition.operator,
+        comparisonValue: toJsonValue(condition.comparisonValue),
+        logicGate: (condition.logicGate ?? "And") as "And" | "Or",
+        position: index + 1,
+      }));
+      await prisma.flwConditions.createMany({ data: flowConditionRows });
     }
+  }
 
-    if (input.eventKey !== undefined) {
-      flowData.eventKey = input.eventKey;
-    }
-
-    if (input.webhookKey !== undefined) {
-      flowData.webhookKey = input.webhookKey;
-    }
-
-    await tx.flw.update({
-      where: { id: flwId },
-      data: flowData,
-    });
-
-    if (input.steps) {
-      // Delete all existing conditions and steps (children before parents for FK safety)
-      await tx.flwConditions.deleteMany({ where: { flwId } });
-      await tx.flwSteps.deleteMany({ where: { flwId, parentStepId: { not: null } } });
-      await tx.flwSteps.deleteMany({ where: { flwId } });
-
-      const normalizedSteps = normalizeSteps(input.steps);
-      await createStepsRecursive(tx, flwId, normalizedSteps, null, 0);
-
-      // Recreate flow-level conditions
-      if (input.conditions && input.conditions.length > 0) {
-        const flowConditionRows = input.conditions.map((condition, index) => ({
-          flwId,
-          flwStepId: null as string | null,
-          sourceType: condition.sourceType,
-          sourceStepId: null as string | null,
-          fieldPath: condition.fieldPath,
-          operator: condition.operator,
-          comparisonValue: toJsonValue(condition.comparisonValue),
-          logicGate: (condition.logicGate ?? "And") as "And" | "Or",
-          position: index + 1,
-        }));
-
-        await tx.flwConditions.createMany({ data: flowConditionRows });
-      }
-    } else if (input.conditions !== undefined) {
-      // Only update flow-level conditions
-      await tx.flwConditions.deleteMany({
-        where: { flwId, flwStepId: null },
-      });
-
-      if (input.conditions.length > 0) {
-        const flowConditionRows = input.conditions.map((condition, index) => ({
-          flwId,
-          flwStepId: null as string | null,
-          sourceType: condition.sourceType,
-          sourceStepId: null as string | null,
-          fieldPath: condition.fieldPath,
-          operator: condition.operator,
-          comparisonValue: toJsonValue(condition.comparisonValue),
-          logicGate: (condition.logicGate ?? "And") as "And" | "Or",
-          position: index + 1,
-        }));
-
-        await tx.flwConditions.createMany({ data: flowConditionRows });
-      }
-    }
-
-    return tx.flw.findUniqueOrThrow({
-      where: { id: flwId },
-      include: {
-        FlwConditions: {
-          where: { flwStepId: null },
-          orderBy: { position: "asc" },
-        },
-        FlwSteps: {
-          where: { parentStepId: null },
-          orderBy: { position: "asc" },
-          include: flowStepsInclude(),
-        },
+  return prisma.flw.findUniqueOrThrow({
+    where: { id: flwId },
+    include: {
+      FlwConditions: {
+        where: { flwStepId: null },
+        orderBy: { position: "asc" },
       },
-    });
+      FlwSteps: {
+        where: { parentStepId: null },
+        orderBy: { position: "asc" },
+        include: flowStepsInclude(),
+      },
+    },
   });
 }

@@ -14,7 +14,7 @@ export const stepQueue = new Queue("step-execution-worker", {
   },
 });
 
-export const eventTriggerQueue = new Queue("external-event-trigger", {
+export const eventTriggerQueue = new Queue("step-execution-worker", {
   connection: redisConnection,
   defaultJobOptions: {
     attempts: 1,

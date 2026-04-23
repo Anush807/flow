@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 import { createExecutionForFlow } from "../services/execution-service.js";
 import { prisma } from "../../lib/prisma.js";
-import { stepQueue, redisConnection } from "../redis-queue.js";
+import { stepQueue, redisConnection } from "../async/redis-queue.js";
 
 export type ExternalEventJob = {
   eventKey: string;

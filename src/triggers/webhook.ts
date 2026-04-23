@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { createExecutionForFlow } from "../services/execution-service.js";
 import { prisma } from "../../lib/prisma.js";
-import { stepQueue } from "../redis-queue.js";
+import { stepQueue } from "../async/redis-queue.js";
 
 export async function webhookTriggerHandler(req: Request, res: Response): Promise<void> {
   const { webhookKey } = req.params as { webhookKey: string };

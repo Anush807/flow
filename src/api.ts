@@ -5,7 +5,7 @@ import {
   triggerFlowSchema,
   updateFlowSchema,
 } from "./validations/index.js";
-import { eventTriggerQueue, stepQueue } from "./redis-queue.js";
+import { eventTriggerQueue, stepQueue } from "./async/redis-queue.js";
 import {
   createExecutionForFlow,
   getExecutionById,

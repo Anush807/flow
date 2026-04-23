@@ -10,6 +10,16 @@ function registerHandlers(handlers: Record<string, IntegrationHandler>) {
   }
 }
 
+const triggerHandlers: Record<string, IntegrationHandler> = {
+  "event:event.receive": async (input) => {
+    return { outputPayload: input };
+  },
+  "event:webhook.receive": async (input) => {
+    return { outputPayload: input };
+  },  
+};
+
+registerHandlers(triggerHandlers);
 registerHandlers(httpHandlers);
 registerHandlers(emailHandlers);
 
