@@ -10,6 +10,7 @@
 ## Current Product Surface
 
 - Flow definitions with ordered steps
+- **Conditional branching** (exclusive if/else branches within flows)
 - Flow lifecycle status: `Draft`, `Active`, `Paused`, `Archived`
 - Manual flow execution
 - Webhook-triggered execution
@@ -21,6 +22,33 @@
 - Execution tracking with step outputs and retry metadata
 - Duplicate-trigger protection via idempotency keys / processed events
 - Recovery loop for retryable or stale pending work
+
+## Branching
+
+Steps can define `branches` — an array of conditional paths. After the step executes, the worker evaluates each branch's conditions in order and takes the **first match** (exclusive branching). Steps within a branch run sequentially. When a branch completes, execution continues with the next step after the branch point.
+
+```json
+{
+  "steps": [
+    { "type": "Action", "integrationKey": "http", "operationKey": "request", "name": "Fetch data" },
+    {
+      "type": "Action", "integrationKey": "http", "operationKey": "respond", "name": "Branch point",
+      "branches": [
+        {
+          "conditions": [{ "sourceType": "Trigger", "fieldPath": "priority", "operator": "Equals", "comparisonValue": "high" }],
+          "steps": [{ "type": "Action", "integrationKey": "email", "operationKey": "send", "name": "Send urgent email" }]
+        },
+        {
+          "steps": [{ "type": "Action", "integrationKey": "http", "operationKey": "respond", "name": "Default handling" }]
+        }
+      ]
+    },
+    { "type": "Action", "integrationKey": "http", "operationKey": "respond", "name": "Runs after branch merges" }
+  ]
+}
+```
+
+Branches can be nested (branches within branches) up to 3 levels deep.
 
 ## Core Runtime
 

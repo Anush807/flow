@@ -102,10 +102,11 @@ async function processStep(stepExecutionId: string): Promise<void> {
   const definition = await getStepDefinition(step.flwStepId);
   const context = await buildStepContext(step);
 
-  const flowConditionsResult =
-    definition.position === 1
-      ? await evaluateFlowConditions(definition.flwId, context)
-      : { matched: true, evaluated: 0 };
+  // Flow-level conditions only on the very first root step
+  const isFirstRootStep = definition.position === 1 && definition.parentStepId === null;
+  const flowConditionsResult = isFirstRootStep
+    ? await evaluateFlowConditions(definition.flwId, context)
+    : { matched: true, evaluated: 0 };
 
   if (!flowConditionsResult.matched) {
     await stopExecutionByCondition(step, {
@@ -121,7 +122,7 @@ async function processStep(stepExecutionId: string): Promise<void> {
       skipped: true,
       reason: "step_conditions_not_met",
       evaluatedConditions: stepConditionsResult.evaluated,
-    });
+    }, context);
     return;
   }
 
@@ -133,7 +134,7 @@ async function processStep(stepExecutionId: string): Promise<void> {
     return;
   }
 
-  await onSuccessFunction(step, outputPayload);
+  await onSuccessFunction(step, outputPayload, context);
 }
 
 // ----------------------------------------------------------------
@@ -437,22 +438,97 @@ async function stopExecutionByCondition(
 }
 
 // ----------------------------------------------------------------
+// Branch evaluation – find next step with branching support
+// ----------------------------------------------------------------
+
+async function findNextStep(
+  tx: Prisma.TransactionClient,
+  current: FlwSteps,
+  context: StepContext,
+): Promise<FlwSteps | null> {
+  // 1. Check if this step has child branches
+  const children = await tx.flwSteps.findMany({
+    where: { parentStepId: current.id },
+    orderBy: [{ branchIndex: "asc" }, { position: "asc" }],
+    include: {
+      FlwConditions: { orderBy: { position: "asc" } },
+    },
+  });
+
+  if (children.length > 0) {
+    // Group children by branchIndex
+    const branches = new Map<number, typeof children>();
+    for (const child of children) {
+      const existing = branches.get(child.branchIndex);
+      if (existing) {
+        existing.push(child);
+      } else {
+        branches.set(child.branchIndex, [child]);
+      }
+    }
+
+    // Evaluate each branch – first matching wins (exclusive branching)
+    const sortedBranches = [...branches.entries()].sort((a, b) => a[0] - b[0]);
+    for (const [, branchSteps] of sortedBranches) {
+      const firstStep = branchSteps[0];
+      if (!firstStep) continue;
+
+      const conditions = firstStep.FlwConditions;
+      if (conditions.length === 0 || evaluateConditions(conditions, context).matched) {
+        return firstStep;
+      }
+    }
+
+    // No branch matched – skip past this branch point, continue at parent level
+    return findNextAfterStep(tx, current);
+  }
+
+  // 2. No child branches – find the next sibling in same branch
+  return findNextAfterStep(tx, current);
+}
+
+async function findNextAfterStep(
+  tx: Prisma.TransactionClient,
+  step: FlwSteps,
+): Promise<FlwSteps | null> {
+  // Find next sibling at the same level (same parentStepId + branchIndex)
+  const nextSibling = await tx.flwSteps.findFirst({
+    where: {
+      flwId: step.flwId,
+      parentStepId: step.parentStepId,
+      branchIndex: step.branchIndex,
+      position: { gt: step.position },
+    },
+    orderBy: { position: "asc" },
+  });
+
+  if (nextSibling) return nextSibling;
+
+  // If inside a branch, walk up to the parent and continue from there
+  if (step.parentStepId) {
+    const parentStep = await tx.flwSteps.findUnique({
+      where: { id: step.parentStepId },
+    });
+    if (parentStep) {
+      return findNextAfterStep(tx, parentStep);
+    }
+  }
+
+  // No more steps at any level
+  return null;
+}
+
+// ----------------------------------------------------------------
 // Success handler – marks step done, chains next step or closes execution
 // ----------------------------------------------------------------
 
-async function onSuccessFunction(step: FlwExecutionSteps, outputPayload: unknown): Promise<void> {
+async function onSuccessFunction(step: FlwExecutionSteps, outputPayload: unknown, context: StepContext): Promise<void> {
   const result = await prisma.$transaction(async (tx) => {
     const current = await tx.flwSteps.findUnique({ where: { id: step.flwStepId } });
     if (!current) throw new Error(`Step definition not found for flwStepId: ${step.flwStepId}`);
 
-    const nextDefinition = await tx.flwSteps.findUnique({
-      where: {
-        flwId_position: {
-          flwId: current.flwId,
-          position: current.position + 1,
-        },
-      },
-    });
+    // Use branching-aware next step resolution
+    const nextDefinition = await findNextStep(tx, current, context);
 
     await tx.flwExecutionSteps.update({
       where: { id: step.id },

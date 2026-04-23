@@ -1,14 +1,5 @@
 import type { IntegrationHandler } from "../types/index.js";
 
-// ----------------------------------------------------------------
-// http:request
-// input:
-//   url        string   (required)
-//   method     string   GET | POST | PUT | PATCH | DELETE  (default GET)
-//   headers    object   key/value pairs  (optional)
-//   body       unknown  request body     (optional)
-//   timeoutMs  number   (default 30000)
-// ----------------------------------------------------------------
 const httpRequest: IntegrationHandler = async (input) => {
   const url = input["url"];
   if (typeof url !== "string" || !url) {
@@ -70,16 +61,6 @@ try {
   };
 };
 
-// ----------------------------------------------------------------
-// http:respond  (used when the workflow was triggered by a webhook
-//               and you want to send a custom response back –
-//               stores the intended response in outputPayload for
-//               the trigger layer to pick up if it is still waiting)
-// input:
-//   statusCode  number   (default 200)
-//   body        unknown  (optional)
-//   headers     object   (optional)
-// ----------------------------------------------------------------
 const httpRespond: IntegrationHandler = async (input) => {
   const statusCode = typeof input["statusCode"] === "number" ? input["statusCode"] : 200;
   const body = input["body"] ?? null;

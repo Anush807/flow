@@ -40,6 +40,15 @@ export const flowStepSchema = z.object({
   configPayload: z.unknown().optional(),
   inputMapping: z.unknown().optional(),
   conditions: z.array(flowConditionSchema).optional(),
+  branches: z
+    .array(
+      z.object({
+        conditions: z.array(flowConditionSchema).optional(),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        steps: z.array(z.lazy((): z.ZodTypeAny => flowStepSchema as any)).min(1),
+      }),
+    )
+    .optional(),
 });
 
 export const createFlowSchema = z

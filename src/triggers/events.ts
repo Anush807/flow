@@ -3,22 +3,6 @@ import { createExecutionForFlow } from "../services/execution-service.js";
 import { prisma } from "../../lib/prisma.js";
 import { stepQueue, redisConnection } from "../redis-queue.js";
 
-// ----------------------------------------------------------------
-// External event trigger
-//
-// Listens on the "external-event-trigger" BullMQ queue.
-// Any external system (another service, a cron job, a message broker
-// bridge) pushes jobs here with this shape:
-//
-//   {
-//     eventKey: string       // matches Flw.eventKey in your DB
-//     payload:  unknown      // arbitrary event data
-//   }
-//
-// This worker looks up the matching active workflow, creates a
-// FlwExecution + first FlwExecutionStep, and enqueues the step job.
-// ----------------------------------------------------------------
-
 export type ExternalEventJob = {
   eventKey: string;
   payload: unknown;
@@ -34,8 +18,6 @@ export const eventTriggerWorker = new Worker<ExternalEventJob>(
       throw new Error("external-event-trigger job is missing 'eventKey'");
     }
 
-    // Look up the active workflow by its eventKey.
-    // Assumes your Flw table has a unique `eventKey` column.
     const workflow = await prisma.flw.findFirst({
       where: {
         eventKey,

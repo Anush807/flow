@@ -30,7 +30,7 @@ async function createFlowHandler(req: express.Request, res: express.Response) {
       ...(payload.eventKey ? { eventKey: payload.eventKey } : {}),
       ...(payload.webhookKey ? { webhookKey: payload.webhookKey } : {}),
       ...(payload.conditions ? { conditions: payload.conditions } : {}),
-      ...(payload.steps ? { steps: payload.steps } : {}),
+      ...(payload.steps ? { steps: payload.steps as any } : {}),
       ...(payload.nodeType ? { nodeType: payload.nodeType } : {}),
       ...(payload.configPayload !== undefined
         ? { configPayload: payload.configPayload }
@@ -103,7 +103,7 @@ router.patch("/:id", async (req, res) => {
       ...(payload.eventKey !== undefined ? { eventKey: payload.eventKey } : {}),
       ...(payload.webhookKey !== undefined ? { webhookKey: payload.webhookKey } : {}),
       ...(payload.conditions !== undefined ? { conditions: payload.conditions } : {}),
-      ...(payload.steps ? { steps: payload.steps } : {}),
+      ...(payload.steps ? { steps: payload.steps as any } : {}),
     });
 
     return res.json({

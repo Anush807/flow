@@ -1,16 +1,6 @@
 import nodemailer from "nodemailer";
 import type { IntegrationHandler } from "../types/index.js";
 
-// ----------------------------------------------------------------
-// Shared transporter – created lazily from environment variables.
-// Required env vars:
-//   SMTP_HOST
-//   SMTP_PORT       (default 587)
-//   SMTP_SECURE     "true" for port 465, otherwise false
-//   SMTP_USER
-//   SMTP_PASS
-//   SMTP_FROM       default "from" address, e.g. no-reply@yourdomain.com
-// ----------------------------------------------------------------
 let _transporter: nodemailer.Transporter | null = null;
 
 function getTransporter(): nodemailer.Transporter {
@@ -32,18 +22,6 @@ function getTransporter(): nodemailer.Transporter {
   return _transporter;
 }
 
-// ----------------------------------------------------------------
-// email:send
-// input:
-//   to       string | string[]   (required)
-//   subject  string              (required)
-//   html     string              (optional – at least one of html/text required)
-//   text     string              (optional)
-//   from     string              (optional, falls back to SMTP_FROM env var)
-//   cc       string | string[]   (optional)
-//   bcc      string | string[]   (optional)
-//   replyTo  string              (optional)
-// ----------------------------------------------------------------
 const emailSend: IntegrationHandler = async (input) => {
   const to = input["to"];
   if (!to || (typeof to !== "string" && !Array.isArray(to))) {

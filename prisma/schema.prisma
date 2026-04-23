@@ -64,17 +64,24 @@ model Flw{
 model FlwSteps{
   id                          String @id @default(uuid())
   Flw              Flw        @relation(fields: [flwId], references: [id])
-                              @@unique([flwId, position])
   flwId                       String
   name                        String?
   position                    Int
   type                        FlwStepType
-  FlwExecutionSteps           FlwExecutionSteps[]
-  FlwConditions               FlwConditions[]
   integrationKey              String
   operationKey                String?
   configPayload               Json?
   inputMapping                Json?
+
+  parentStepId                String?
+  branchIndex                 Int @default(0)
+  parentStep                  FlwSteps? @relation("StepBranches", fields: [parentStepId], references: [id])
+  childSteps                  FlwSteps[] @relation("StepBranches")
+
+  FlwExecutionSteps           FlwExecutionSteps[]
+  FlwConditions               FlwConditions[]
+
+  @@index([flwId, parentStepId, branchIndex, position])
 }
 
 model FlwExecutions{
