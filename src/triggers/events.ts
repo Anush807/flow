@@ -19,12 +19,13 @@ export const eventTriggerWorker = new Worker<ExternalEventJob>(
     }
 
     const workflow = await prisma.flw.findFirst({
-      where: {
+      where: {  
         eventKey,
         status: "Active",
       },
       include: {
         FlwSteps: {
+          where: { parentStepId: null },
           orderBy: { position: "asc" },
           take: 1,
         },

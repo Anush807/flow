@@ -69,6 +69,7 @@ export async function createExecutionForFlow(input: {
       const firstStep = await tx.flwSteps.findFirst({
         where: {
           flwId: input.flwId,
+          parentStepId: null,
         },
         orderBy: {
           position: "asc",

@@ -148,3 +148,13 @@ model ProcessedEvents{
   FlwExecutions               FlwExecutions? @relation(fields: [flwExecutionId], references: [id])
   processedAt                 DateTime   @default(now())
 }
+
+model FlwDataRecord{
+  id                          String @id @default(uuid())
+  collection                  String
+  data                        Json
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@index([collection])
+}

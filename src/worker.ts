@@ -518,10 +518,6 @@ async function findNextAfterStep(
   return null;
 }
 
-// ----------------------------------------------------------------
-// Success handler – marks step done, chains next step or closes execution
-// ----------------------------------------------------------------
-
 async function onSuccessFunction(step: FlwExecutionSteps, outputPayload: unknown, context: StepContext): Promise<void> {
   const result = await prisma.$transaction(async (tx) => {
     const current = await tx.flwSteps.findUnique({ where: { id: step.flwStepId } });

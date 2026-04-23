@@ -13,6 +13,7 @@ export async function webhookTriggerHandler(req: Request, res: Response): Promis
     },
     include: {
       FlwSteps: {
+        where: { parentStepId: null },
         orderBy: { position: "asc" },
         take: 1,
       },
