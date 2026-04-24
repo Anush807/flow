@@ -1,10 +1,6 @@
 import { prisma } from "../../lib/prisma.js";
 import { Prisma } from "../../generated/prisma/client.js";
 
-// ----------------------------------------------------------------
-// Types
-// ----------------------------------------------------------------
-
 type BranchInput = {
   conditions?: FlowConditionInput[] | undefined;
   steps: FlowStepInput[];
@@ -37,10 +33,6 @@ type FlowConditionInput = {
   comparisonValue?: unknown;
   logicGate?: "And" | "Or" | undefined;
 };
-
-// ----------------------------------------------------------------
-// Helpers
-// ----------------------------------------------------------------
 
 function toJsonValue(value: unknown) {
   if (value === undefined) {
