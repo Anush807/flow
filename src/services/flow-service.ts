@@ -324,9 +324,14 @@ export async function updateFlowDefinition(
   await prisma.flw.update({ where: { id: flwId }, data: flowData });
 
   if (input.steps) {
-    await prisma.flwConditions.deleteMany({ where: { flwId } });
-    await prisma.flwSteps.deleteMany({ where: { flwId, parentStepId: { not: null } } });
-    await prisma.flwSteps.deleteMany({ where: { flwId } });
+  await prisma.flwExecutionSteps.deleteMany({
+    where: { FlwSteps: { flwId } },
+  });
+  await prisma.processedEvents.deleteMany({ where: { flwId } });
+  await prisma.flwExecutions.deleteMany({ where: { flwId } });
+  await prisma.flwConditions.deleteMany({ where: { flwId } });
+  await prisma.flwSteps.deleteMany({ where: { flwId, parentStepId: { not: null } } });
+  await prisma.flwSteps.deleteMany({ where: { flwId } });
 
     const normalizedSteps = normalizeSteps(input.steps);
     await createStepsRecursive(prisma, flwId, normalizedSteps, null, 0);

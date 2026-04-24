@@ -390,14 +390,18 @@ async function runIntegration(
   definition: LoadedStepDefinition,
   context: StepContext,
 ): Promise<unknown> {
-  if (!definition.operationKey) {
-    throw new Error(`Step operation not found for flwStepId: ${definition.id}`);
+  if (definition.type === "Trigger") {
+    return { skipped: true, reason: "trigger_step" };
   }
 
-  const resolvedInput = resolveInputMapping(definition.inputMapping, context) as Record<
-    string,
-    unknown
-  >;
+  if (!definition.integrationKey || !definition.operationKey) {
+    throw new Error(`Step ${definition.id} is missing integrationKey or operationKey`);
+  }
+
+  // use inputMapping if present, otherwise fall back to configPayload
+  const rawInput = definition.inputMapping ?? definition.configPayload ?? {};
+
+  const resolvedInput = resolveInputMapping(rawInput, context) as Record<string, unknown>;
 
   const result = await executeIntegration(
     definition.integrationKey,
