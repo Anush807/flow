@@ -106,29 +106,6 @@ npm run dev:recovery
 npm run build
 ```
 
-## Main API Endpoints
-
-```text
-POST   /flow
-GET    /flow
-GET    /flow/:id
-PATCH  /flow/:id
-POST   /flow/:id/trigger
-GET    /flow/:id/executions
-GET    /flow/executions/:executionId
-GET    /flow/dashboard/summary
-POST   /flow/events/:eventKey/emit
-POST   /webhooks/:webhookKey
-```
-
-## Trigger Idempotency
-
-- Manual trigger: send `idempotencyKey` in the request body
-- Webhook trigger: send `x-idempotency-key` or `x-flow-event-key`
-- External event trigger: send `idempotencyKey` in the event payload routed through `/flow/events/:eventKey/emit`
-
-Duplicate requests return the existing execution instead of creating a second one.
-
 ## Notes
 
 - Schema changes require applying the Prisma migrations in `prisma/migrations/`
