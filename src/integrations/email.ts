@@ -16,7 +16,7 @@ function getTransporter(): nodemailer.Transporter {
     auth: {
       user: process.env["SMTP_USER"],
       pass: process.env["SMTP_PASS"],
-    }
+    
   });
 
   return _transporter;
