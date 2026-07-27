@@ -5,7 +5,7 @@ import { prisma } from "../../lib/prisma.js";
 import { Prisma } from "../../generated/prisma/client.js";
 import type { FlwConditionLogicGate, FlwConditionOperator, FlwConditions, FlwExecutionSteps, FlwStepType, FlwSteps } from "../../generated/prisma/client.js";
 import { stepQueue, redisConnection } from "./redis-queue.js";
-import { executeIntegration } from "../integrations/registy.js";
+import { executeIntegration } from "../integrations/registry.js";
 
 
 type StepContext = {

@@ -18,8 +18,28 @@ import {
   listFlowDefinitions,
   updateFlowDefinition,
 } from "./services/flow-service.js";
+import { testFlowExecution } from "./services/test-services.js";
+
+
 
 const router = express.Router();
+
+router.post("/:id/test", async (req, res) => {
+  const flwId = String(req.params.id);
+  try {
+    const triggerPayload = req.body?.triggerPayload ?? req.body ?? {};
+    const result = await testFlowExecution(flwId, triggerPayload);
+    return res.json({
+      message: "Test execution completed",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: "Test execution failed",
+      error: String(error),
+    });
+  }
+});
 
 async function createFlowHandler(req: express.Request, res: express.Response) {
   try {
