@@ -19,7 +19,7 @@ import {
   updateFlowDefinition,
 } from "./services/flow-service.js";
 import { testFlowExecution } from "./services/test-services.js";
-
+import { webhookTriggerHandler } from "./triggers/webhook.js"
 
 
 const router = express.Router();
@@ -271,5 +271,6 @@ async function triggerFlowHandler(req: express.Request, res: express.Response) {
 
 router.post("/:id/trigger", triggerFlowHandler);
 router.post("/flows/:id/trigger", triggerFlowHandler);
+router.post("/webhook/:webhookKey", webhookTriggerHandler)
 
 export default router;
