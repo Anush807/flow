@@ -27,8 +27,16 @@ if (body !== undefined && method !== "GET" && method !== "HEAD") {
 }
 
 let response: Response;
+let responseBody: unknown;
 try {
   response = await fetch(url, init);
+
+  // Reading the body has to stay inside the timeout window – a server that
+  // sends headers and then stalls would otherwise hang the step forever.
+  const contentType = response.headers.get("content-type") ?? "";
+  responseBody = contentType.includes("application/json")
+    ? await response.json()
+    : await response.text();
 } catch (err) {
   if ((err as Error).name === "AbortError") {
     throw new Error(`http:request timed out after ${timeoutMs}ms – URL: ${url}`);
@@ -37,13 +45,6 @@ try {
 } finally {
   clearTimeout(timer);
 }
-  const contentType = response.headers.get("content-type") ?? "";
-  let responseBody: unknown;
-  if (contentType.includes("application/json")) {
-    responseBody = await response.json();
-  } else {
-    responseBody = await response.text();
-  }
 
   if (!response.ok) {
     throw new Error(

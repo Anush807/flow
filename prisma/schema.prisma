@@ -78,10 +78,17 @@ model FlwSteps{
   parentStep                  FlwSteps? @relation("StepBranches", fields: [parentStepId], references: [id])
   childSteps                  FlwSteps[] @relation("StepBranches")
 
+  /// Soft delete. Replacing a flow's steps supersedes the old definitions
+  /// instead of deleting them, so past executions keep resolving the steps they
+  /// actually ran. Every step superseded by one PATCH shares a single timestamp,
+  /// which is what identifies a definition "generation" during traversal.
+  deletedAt                   DateTime?
+
   FlwExecutionSteps           FlwExecutionSteps[]
   FlwConditions               FlwConditions[]
 
   @@index([flwId, parentStepId, branchIndex, position])
+  @@index([flwId, deletedAt])
 }
 
 model FlwExecutions{

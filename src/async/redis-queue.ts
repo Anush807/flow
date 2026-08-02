@@ -1,8 +1,10 @@
-import { Queue } from "bullmq"
+import { Queue } from "bullmq";
+import { config } from "../config.js";
 
 export const redisConnection = {
-  host: process.env["REDIS_HOST"] ?? "127.0.0.1",
-  port: parseInt(process.env["REDIS_PORT"] ?? "6379", 10),
+  host: config.REDIS_HOST,
+  port: config.REDIS_PORT,
+  ...(config.REDIS_PASSWORD !== undefined ? { password: config.REDIS_PASSWORD } : {}),
 };
 
 export const stepQueue = new Queue("step-execution-worker", {

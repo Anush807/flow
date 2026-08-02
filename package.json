@@ -6,11 +6,14 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "dev:worker": "tsx watch src/async/worker.ts",
-    "dev:recovery": "tsx watch src/recovery.ts",
-    "dev:all": "concurrently \"npm run dev\" \"npm run dev:worker\"",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "prisma:generate": "prisma generate"
+    "dev:recovery": "tsx watch src/recovery/recovery.ts",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:worker\" \"npm run dev:recovery\"",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/src/index.js",
+    "prisma:generate": "prisma generate",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:watch": "node --import tsx --test --watch \"src/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -28,19 +31,13 @@
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.4.0",
     "@types/express": "^5.0.6",
-    "@types/express-session": "^1.18.2",
     "@types/nodemailer": "^8.0.0",
-    "@types/redis": "^4.0.10",
     "bullmq": "^5.68.0",
-    "connect-redis": "^9.0.0",
-    "dns": "^0.2.2",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
-    "express-session": "^1.19.0",
     "ioredis": "^5.9.2",
     "nodemailer": "^8.0.5",
     "pg": "^8.18.0",
-    "redis": "^5.10.0",
     "zod": "^4.3.6"
   }
 }

@@ -3,10 +3,13 @@ import { prisma } from "../lib/prisma.js";
 
 async function seed() {
   // Clean up previous test data
+  // Order matters: FlwConditions has a required relation to Flw, so leaving it
+  // out made the final flw.deleteMany() fail on a foreign key violation.
   await prisma.flwExecutionSteps.deleteMany();
-  await prisma.flwExecutions.deleteMany();
-  await prisma.flwSteps.deleteMany();
   await prisma.processedEvents.deleteMany();
+  await prisma.flwExecutions.deleteMany();
+  await prisma.flwConditions.deleteMany();
+  await prisma.flwSteps.deleteMany();
   await prisma.flw.deleteMany();
 
   // Workflow 1: HTTP request step

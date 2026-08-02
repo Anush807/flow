@@ -1,7 +1,9 @@
 import express from "express";
+import { ZodError } from "zod";
 import {
   createFlowSchema,
   emitEventSchema,
+  paginationSchema,
   triggerFlowSchema,
   updateFlowSchema,
 } from "./validations/index.js";
@@ -13,16 +15,54 @@ import {
   getExecutionSummary,
 } from "./services/execution-service.js";
 import {
+  countFlowDefinitions,
   createFlowDefinition,
   getFlowDefinition,
   listFlowDefinitions,
   updateFlowDefinition,
 } from "./services/flow-service.js";
 import { testFlowExecution } from "./services/test-services.js";
-import { webhookTriggerHandler } from "./triggers/webhook.js"
+import { webhookTriggerHandler } from "./triggers/webhook.js";
+import { ingressRateLimit } from "./middleware/rate-limit.js";
+import { createLogger } from "./utils/logger.js";
 
-
+const log = createLogger("api");
 const router = express.Router();
+
+/**
+ * Maps a thrown error onto a status code. Previously every failure in this
+ * router collapsed to 400 (or 500), so callers could not tell a bad request
+ * from a missing flow from a genuine server fault.
+ */
+function errorResponse(res: express.Response, message: string, error: unknown) {
+  if (error instanceof ZodError) {
+    return res.status(400).json({
+      message,
+      error: "Validation failed",
+      issues: error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+      })),
+    });
+  }
+
+  const detail = error instanceof Error ? error.message : String(error);
+
+  if (/not found/i.test(detail)) {
+    return res.status(404).json({ message, error: detail });
+  }
+
+  if (/not active|has no steps|at least one step/i.test(detail)) {
+    return res.status(409).json({ message, error: detail });
+  }
+
+  if (/sourceStepPosition|required|must be/i.test(detail)) {
+    return res.status(400).json({ message, error: detail });
+  }
+
+  log.error(message, error);
+  return res.status(500).json({ message, error: detail });
+}
 
 router.post("/:id/test", async (req, res) => {
   const flwId = String(req.params.id);
@@ -34,10 +74,7 @@ router.post("/:id/test", async (req, res) => {
       data: result,
     });
   } catch (error) {
-    return res.status(400).json({
-      message: "Test execution failed",
-      error: String(error),
-    });
+    return errorResponse(res, "Test execution failed", error);
   }
 });
 
@@ -57,34 +94,35 @@ async function createFlowHandler(req: express.Request, res: express.Response) {
         : {}),
     });
 
+    log.info("Flow created", { flwId: flow.id, name: flow.name, status: flow.status });
+
     return res.status(201).json({
       message: "Flow created successfully",
       data: flow,
     });
   } catch (error) {
-    return res.status(400).json({
-      message: "Failed to create flow",
-      error: String(error),
-    });
+    return errorResponse(res, "Failed to create flow", error);
   }
 }
 
 router.post("/", createFlowHandler);
 router.post("/create", createFlowHandler);
 
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const flows = await listFlowDefinitions();
+    const pagination = paginationSchema.parse(req.query);
+    const [flows, total] = await Promise.all([
+      listFlowDefinitions(pagination),
+      countFlowDefinitions(),
+    ]);
 
     return res.json({
       message: "Flows fetched successfully",
       data: flows,
+      pagination: { ...pagination, total },
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Failed to fetch flows",
-      error: String(error),
-    });
+    return errorResponse(res, "Failed to fetch flows", error);
   }
 });
 
@@ -105,10 +143,7 @@ router.get("/:id", async (req, res) => {
       data: flow,
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Failed to fetch flow",
-      error: String(error),
-    });
+    return errorResponse(res, "Failed to fetch flow", error);
   }
 });
 
@@ -126,15 +161,14 @@ router.patch("/:id", async (req, res) => {
       ...(payload.steps ? { steps: payload.steps as any } : {}),
     });
 
+    log.info("Flow updated", { flwId, replacedSteps: payload.steps !== undefined });
+
     return res.json({
       message: "Flow updated successfully",
       data: flow,
     });
   } catch (error) {
-    return res.status(400).json({
-      message: "Failed to update flow",
-      error: String(error),
-    });
+    return errorResponse(res, "Failed to update flow", error);
   }
 });
 
@@ -142,17 +176,16 @@ router.get("/:id/executions", async (req, res) => {
   const flwId = String(req.params.id);
 
   try {
-    const executions = await getExecutionHistoryForFlow(flwId);
+    const pagination = paginationSchema.parse(req.query);
+    const { executions, total } = await getExecutionHistoryForFlow(flwId, pagination);
 
     return res.json({
       message: "Executions fetched successfully",
       data: executions,
+      pagination: { ...pagination, total },
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Failed to fetch executions",
-      error: String(error),
-    });
+    return errorResponse(res, "Failed to fetch executions", error);
   }
 });
 
@@ -160,6 +193,8 @@ router.get("/dashboard/summary", async (_req, res) => {
   try {
     const [summary, flows] = await Promise.all([
       getExecutionSummary(),
+      // Status breakdown is over every flow, so this one is intentionally
+      // unpaginated – it returns counts, not rows.
       listFlowDefinitions(),
     ]);
 
@@ -177,10 +212,7 @@ router.get("/dashboard/summary", async (_req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Failed to fetch dashboard summary",
-      error: String(error),
-    });
+    return errorResponse(res, "Failed to fetch dashboard summary", error);
   }
 });
 
@@ -201,10 +233,7 @@ router.get("/executions/:executionId", async (req, res) => {
       data: execution,
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Failed to fetch execution",
-      error: String(error),
-    });
+    return errorResponse(res, "Failed to fetch execution", error);
   }
 });
 
@@ -220,6 +249,8 @@ router.post("/events/:eventKey/emit", async (req, res) => {
       ...(idempotencyKey !== undefined ? { idempotencyKey } : {}),
     });
 
+    log.info("External event queued", { eventKey, jobId: job.id });
+
     return res.status(202).json({
       message: "Event queued successfully",
       data: {
@@ -228,10 +259,7 @@ router.post("/events/:eventKey/emit", async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(400).json({
-      message: "Failed to queue event",
-      error: String(error),
-    });
+    return errorResponse(res, "Failed to queue event", error);
   }
 });
 
@@ -253,6 +281,13 @@ async function triggerFlowHandler(req: express.Request, res: express.Response) {
       });
     }
 
+    log.info(isDuplicate ? "Duplicate trigger ignored" : "Execution created", {
+      flwId,
+      executionId: execution.id,
+      stepExecutionId: executionStep?.id ?? null,
+      duplicate: isDuplicate,
+    });
+
     return res.json({
       message: isDuplicate ? "Duplicate trigger ignored" : "Execution created successfully",
       data: {
@@ -262,15 +297,13 @@ async function triggerFlowHandler(req: express.Request, res: express.Response) {
       },
     });
   } catch (error) {
-    return res.status(400).json({
-      message: "Error while triggering flow",
-      error: String(error),
-    });
+    return errorResponse(res, "Error while triggering flow", error);
   }
 }
 
 router.post("/:id/trigger", triggerFlowHandler);
 router.post("/flows/:id/trigger", triggerFlowHandler);
-router.post("/webhook/:webhookKey", webhookTriggerHandler)
+// Ingress alias – rate limited per webhook key like the top-level /webhooks route.
+router.post("/webhook/:webhookKey", ingressRateLimit, webhookTriggerHandler);
 
 export default router;

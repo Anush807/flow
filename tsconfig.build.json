@@ -1,0 +1,13 @@
+{
+  // Production build: same settings, minus the tests. `npm run typecheck` uses
+  // the base config so test files are still type-checked in CI.
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "dist",
+    "generated",
+    "node_modules",
+    "prisma.config.ts",
+    "src/web",
+    "**/*.test.ts"
+  ]
+}
