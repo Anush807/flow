@@ -1,0 +1,24 @@
+# Keep the build context small and secrets out of the image.
+node_modules
+**/node_modules
+dist
+generated
+.git
+.gitignore
+
+# Secrets. Configuration is injected as environment variables at runtime.
+.env
+.env.*
+!.env.example
+
+# The Vite prototype renders mock data and is not part of the backend build.
+src/web
+
+.claude
+.codex
+spec
+script
+Dockerfile
+.dockerignore
+*.md
+!README.md
