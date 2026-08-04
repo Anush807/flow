@@ -9,14 +9,16 @@ function getTransporter(): nodemailer.Transporter {
   const host = process.env["SMTP_HOST"];
   if (!host) throw new Error("SMTP_HOST environment variable is not set");
 
+  // Passing `auth` with undefined credentials makes nodemailer attempt (and
+  // fail) authentication against relays that accept anonymous submission.
+  const user = process.env["SMTP_USER"];
+  const pass = process.env["SMTP_PASS"];
+
   _transporter = nodemailer.createTransport({
     host,
     port: parseInt(process.env["SMTP_PORT"] ?? "587", 10),
     secure: process.env["SMTP_SECURE"] === "true",
-    auth: {
-      user: process.env["SMTP_USER"],
-      pass: process.env["SMTP_PASS"],
-    }
+    ...(user ? { auth: { user, pass: pass ?? "" } } : {}),
   });
 
   return _transporter;

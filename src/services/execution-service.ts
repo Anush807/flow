@@ -10,6 +10,13 @@ function toJsonValue(value: unknown) {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
+/**
+ * Prisma's default interactive-transaction timeout is 5s, which is generous on
+ * a co-located database and tight on a remote one. These writes are few but
+ * latency-bound, so the budget is set explicitly rather than inherited.
+ */
+const EXECUTION_WRITE_TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 20_000 };
+
 async function getDuplicateExecution(
   tx: Prisma.TransactionClient,
   processedEventKey: string,
@@ -56,40 +63,47 @@ export async function createExecutionForFlow(input: {
         ? `${input.flwId}:manual:${input.idempotencyKey}`
         : null;
 
+  // Reads happen outside the transaction. They are definition lookups, not
+  // part of the invariant being protected, and holding a transaction open
+  // across six sequential round trips blew past Prisma's 5s default on a
+  // latent database – turning every trigger into a 500.
+  const flow = await prisma.flw.findUnique({
+    where: { id: input.flwId },
+  });
+
+  if (!flow || flow.status !== "Active") {
+    throw new Error("Flow not active");
+  }
+
+  const firstStep = await prisma.flwSteps.findFirst({
+    where: {
+      flwId: input.flwId,
+      parentStepId: null,
+      deletedAt: null,
+    },
+    orderBy: {
+      position: "asc",
+    },
+  });
+
+  if (!firstStep) {
+    throw new Error("Flow has no steps");
+  }
+
+  if (processedEventKey) {
+    const existingExecution = await getDuplicateExecution(prisma, processedEventKey).catch(
+      () => null,
+    );
+
+    if (existingExecution) {
+      return existingExecution;
+    }
+  }
+
   try {
+    // What actually needs to be atomic: an execution is never created without
+    // its first step, and never without its dedupe record.
     return await prisma.$transaction(async (tx) => {
-      const flow = await tx.flw.findUnique({
-        where: { id: input.flwId },
-      });
-
-      if (!flow || flow.status !== "Active") {
-        throw new Error("Flow not active");
-      }
-
-      const firstStep = await tx.flwSteps.findFirst({
-        where: {
-          flwId: input.flwId,
-          parentStepId: null,
-        },
-        orderBy: {
-          position: "asc",
-        },
-      });
-
-      if (!firstStep) {
-        throw new Error("Flow has no steps");
-      }
-
-      if (processedEventKey) {
-        const existingExecution = await getDuplicateExecution(tx, processedEventKey).catch(
-          () => null,
-        );
-
-        if (existingExecution) {
-          return existingExecution;
-        }
-      }
-
       const execution = await tx.flwExecutions.create({
         data: {
           flwId: input.flwId,
@@ -123,7 +137,7 @@ export async function createExecutionForFlow(input: {
       }
 
       return { execution, executionStep, isDuplicate: false };
-    });
+    }, EXECUTION_WRITE_TRANSACTION_OPTIONS);
   } catch (error) {
     if (
       processedEventKey &&
@@ -131,29 +145,43 @@ export async function createExecutionForFlow(input: {
       error.code === "P2002" &&
       (error.meta?.target as string[] | undefined)?.includes("eventKey")
     ) {
-      return prisma.$transaction(async (tx) => getDuplicateExecution(tx, processedEventKey));
+      // Lost the race to a concurrent delivery of the same event – the winner
+      // has committed, so its execution is readable.
+      return getDuplicateExecution(prisma, processedEventKey);
     }
 
     throw error;
   }
 }
 
-export async function getExecutionHistoryForFlow(flwId: string) {
-  return prisma.flwExecutions.findMany({
-    where: {
-      flwId,
-    },
-    orderBy: {
-      triggeredAt: "desc",
-    },
-    include: {
-      FlwExecutionSteps: {
-        orderBy: {
-          startedAt: "asc",
+export async function getExecutionHistoryForFlow(
+  flwId: string,
+  pagination: { limit: number; offset: number },
+) {
+  // Executions grow without bound, so the caller always gets a page plus the
+  // total needed to drive a pager.
+  const [total, executions] = await Promise.all([
+    prisma.flwExecutions.count({ where: { flwId } }),
+    prisma.flwExecutions.findMany({
+      where: {
+        flwId,
+      },
+      orderBy: {
+        triggeredAt: "desc",
+      },
+      skip: pagination.offset,
+      take: pagination.limit,
+      include: {
+        FlwExecutionSteps: {
+          orderBy: {
+            startedAt: "asc",
+          },
         },
       },
-    },
-  });
+    }),
+  ]);
+
+  return { executions, total, ...pagination };
 }
 
 export async function getExecutionById(executionId: string) {

@@ -102,3 +102,15 @@ export const emitEventSchema = z.object({
   payload: z.unknown().optional(),
   idempotencyKey: z.string().min(1).optional(),
 });
+
+/**
+ * Query pagination for list endpoints. `limit` is capped server-side so a
+ * client cannot ask for an unbounded result set from a table that grows with
+ * every execution.
+ */
+export const MAX_PAGE_SIZE = 100;
+
+export const paginationSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(25),
+  offset: z.coerce.number().int().min(0).default(0),
+});

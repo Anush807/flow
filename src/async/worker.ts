@@ -1,20 +1,24 @@
-import "../triggers/events.js"
+// The event-trigger worker has no process of its own – importing it here is
+// what starts it. Bound by name (rather than a bare side-effect import) so
+// shutdown can close it too.
+import { eventTriggerWorker } from "../triggers/events.js";
 import { randomUUID } from "node:crypto";
 import { Worker } from "bullmq";
 import { prisma } from "../../lib/prisma.js";
 import { Prisma } from "../../generated/prisma/client.js";
-import type { FlwConditionLogicGate, FlwConditionOperator, FlwConditions, FlwExecutionSteps, FlwStepType, FlwSteps } from "../../generated/prisma/client.js";
+import type { FlwConditions, FlwExecutionSteps, FlwSteps } from "../../generated/prisma/client.js";
 import { stepQueue, redisConnection } from "./redis-queue.js";
 import { executeIntegration } from "../integrations/registry.js";
+import { resolveInputMapping } from "../utils/template.js";
+import type { StepContext } from "../utils/template.js";
+import { evaluateConditions } from "../utils/conditions.js";
+import { findNextStep } from "../services/step-traversal.js";
+import type { StepReader } from "../services/step-traversal.js";
+import { config } from "../config.js";
+import { planRetry } from "../utils/retry.js";
+import { createLogger } from "../utils/logger.js";
 
-
-type StepContext = {
-  triggerPayload: unknown;
-  previousSteps: Array<{
-    stepId: string;
-    outputPayload: unknown;
-  }>;
-};
+const log = createLogger("worker");
 
 type LoadedStepDefinition = FlwSteps & {
   FlwConditions: FlwConditions[];
@@ -23,6 +27,12 @@ type LoadedStepDefinition = FlwSteps & {
 // ----------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------
+
+/**
+ * Prisma's 5s default is tight against a remote database. These transactions
+ * are deliberately small, but each statement still costs a round trip.
+ */
+const STEP_WRITE_TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 20_000 };
 
 function toJsonValue(value: unknown): Prisma.InputJsonValue  | typeof Prisma.JsonNull {
   if (value === undefined) {
@@ -35,34 +45,34 @@ function toJsonValue(value: unknown): Prisma.InputJsonValue  | typeof Prisma.Jso
 // Worker
 // ----------------------------------------------------------------
 
-console.log("Step execution worker starting…");
+log.info("Step execution worker starting", { concurrency: config.WORKER_CONCURRENCY });
 
 const worker = new Worker<{ stepExecutionId: string }>(
   "step-execution-worker",
   async (job) => {
     const { stepExecutionId } = job.data;
     if (!stepExecutionId) {
-      console.warn(`Job ${job.id} is missing stepExecutionId – skipping`);
+      log.warn("Job is missing stepExecutionId – skipping", { jobId: job.id });
       return;
     }
     await processStep(stepExecutionId);
   },
   {
     connection: redisConnection,
-    concurrency: parseInt(process.env["WORKER_CONCURRENCY"] ?? "10", 10),
+    concurrency: config.WORKER_CONCURRENCY,
   },
 );
 
 worker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed – stepExecutionId: ${job.data.stepExecutionId}`);
+  log.debug("Job completed", { jobId: job.id, stepExecutionId: job.data.stepExecutionId });
 });
 
 worker.on("failed", (job, err) => {
-  console.error(`Job ${job?.id} failed – stepExecutionId: ${job?.data?.stepExecutionId}`, err);
+  log.error("Job failed", err, { jobId: job?.id, stepExecutionId: job?.data?.stepExecutionId });
 });
 
 worker.on("error", (err) => {
-  console.error("Worker error:", err);
+  log.error("Worker error", err);
 });
 
 // ----------------------------------------------------------------
@@ -70,14 +80,16 @@ worker.on("error", (err) => {
 // ----------------------------------------------------------------
 
 async function shutdown(signal: string) {
-  console.log(`Received ${signal} – shutting down worker gracefully…`);
+  log.info("Shutting down worker", { signal });
   try {
     await worker.close();
+    await eventTriggerWorker.close();
+    await stepQueue.close();
     await prisma.$disconnect();
-    console.log("Worker shut down cleanly");
+    log.info("Worker shut down cleanly");
     process.exit(0);
   } catch (err) {
-    console.error("Error during shutdown:", err);
+    log.error("Error during worker shutdown", err);
     process.exit(1);
   }
 }
@@ -93,51 +105,55 @@ async function processStep(stepExecutionId: string): Promise<void> {
   const step = await claimStep(stepExecutionId);
   if (!step) {
     // Already claimed by another worker instance or not in Pending state.
-    console.log(`Step ${stepExecutionId} already claimed or not found – skipping`);
+    log.debug("Step already claimed or not found – skipping", { stepExecutionId });
     return;
   }
 
-  const definition = await getStepDefinition(step.flwStepId);
-  const context = await buildStepContext(step);
-
-  if (definition.type === "Trigger") {
-  await onSuccessFunction(step, { skipped: true, reason: "trigger_step" }, context);
-  return;
-}
-
-  // Flow-level conditions only on the very first root step
-  const isFirstRootStep = definition.position === 1 && definition.parentStepId === null;
-  const flowConditionsResult = isFirstRootStep
-    ? await evaluateFlowConditions(definition.flwId, context)
-    : { matched: true, evaluated: 0 };
-
-  if (!flowConditionsResult.matched) {
-    await stopExecutionByCondition(step, {
-      scope: "flow",
-      evaluated: flowConditionsResult.evaluated,
-    });
-    return;
-  }
-
-  const stepConditionsResult = evaluateConditions(definition.FlwConditions, context);
-  if (!stepConditionsResult.matched) {
-    await onSuccessFunction(step, {
-      skipped: true,
-      reason: "step_conditions_not_met",
-      evaluatedConditions: stepConditionsResult.evaluated,
-    }, context);
-    return;
-  }
-
-  let outputPayload: unknown;
+  // Everything past the claim must be guarded: the step is now `Running`, and
+  // recovery deliberately ignores executions that still have a `Running` step.
+  // An unguarded throw (missing definition, DB blip, bad condition operator)
+  // would strand the execution forever.
   try {
-    outputPayload = await runIntegration(definition, context);
+    const definition = await getStepDefinition(step.flwStepId);
+    const context = await buildStepContext(step);
+
+    // Flow-level conditions gate the whole run and are evaluated on the very
+    // first root step. This has to happen *before* the Trigger short-circuit –
+    // the first root step is normally a Trigger, so checking afterwards meant
+    // flow-level conditions were never evaluated at all.
+    const isFirstRootStep = definition.position === 1 && definition.parentStepId === null;
+    if (isFirstRootStep) {
+      const flowConditionsResult = await evaluateFlowConditions(definition.flwId, context);
+
+      if (!flowConditionsResult.matched) {
+        await stopExecutionByCondition(step, {
+          scope: "flow",
+          evaluated: flowConditionsResult.evaluated,
+        });
+        return;
+      }
+    }
+
+    if (definition.type === "Trigger") {
+      await onSuccessFunction(step, { skipped: true, reason: "trigger_step" }, context);
+      return;
+    }
+
+    const stepConditionsResult = evaluateConditions(definition.FlwConditions, context);
+    if (!stepConditionsResult.matched) {
+      await onSuccessFunction(step, {
+        skipped: true,
+        reason: "step_conditions_not_met",
+        evaluatedConditions: stepConditionsResult.evaluated,
+      }, context);
+      return;
+    }
+
+    const outputPayload = await runIntegration(definition, context);
+    await onSuccessFunction(step, outputPayload, context);
   } catch (err) {
     await failureHandler(step, err);
-    return;
   }
-
-  await onSuccessFunction(step, outputPayload, context);
 }
 
 // ----------------------------------------------------------------
@@ -229,145 +245,6 @@ async function buildStepContext(step: FlwExecutionSteps): Promise<StepContext> {
   };
 }
 
-// ----------------------------------------------------------------
-// Template resolution  {{ trigger.x }}  {{ steps.<id>.x }}
-// ----------------------------------------------------------------
-
-function resolvePath(source: unknown, path: string[]): unknown {
-  let current: unknown = source;
-  for (const segment of path) {
-    if (current === null || current === undefined || typeof current !== "object") {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return current;
-}
-
-function resolveTemplate(template: string, context: StepContext): string {
-  return template.replace(/\{\{\s*([^}]+)\s*\}\}/g, (_, rawToken: string) => {
-    const token = rawToken.trim();
-
-    if (token === "trigger") {
-      return JSON.stringify(context.triggerPayload ?? null);
-    }
-    if (token.startsWith("trigger.")) {
-      const value = resolvePath(
-        context.triggerPayload,
-        token.slice("trigger.".length).split("."),
-      );
-      return value === undefined ? "" : String(value);
-    }
-    if (token.startsWith("steps.")) {
-      const [, stepId, ...path] = token.split(".");
-      const matched = context.previousSteps.find((entry) => entry.stepId === stepId);
-      const value = resolvePath(matched?.outputPayload, path);
-      return value === undefined ? "" : String(value);
-    }
-    return "";
-  });
-}
-
-function resolveInputMapping(value: unknown, context: StepContext): unknown {
-  if (typeof value === "string") return resolveTemplate(value, context);
-  if (Array.isArray(value)) return value.map((item) => resolveInputMapping(item, context));
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([k, v]) => [
-        k,
-        resolveInputMapping(v, context),
-      ]),
-    );
-  }
-  return value;
-}
-
-function evaluateSingleCondition(condition: FlwConditions, context: StepContext): boolean {
-  const sourcePayload =
-    condition.sourceType === "Trigger"
-      ? context.triggerPayload
-      : context.previousSteps.find((entry) => entry.stepId === condition.sourceStepId)?.outputPayload;
-
-  const actualValue = resolvePath(sourcePayload, condition.fieldPath.split("."));
-  const expectedValue =
-    condition.comparisonValue === null || condition.comparisonValue === undefined
-      ? undefined
-      : condition.comparisonValue;
-
-  switch (condition.operator) {
-    case "Equals":
-      return actualValue === expectedValue;
-    case "NotEquals":
-      return actualValue !== expectedValue;
-    case "Contains":
-      if (typeof actualValue === "string" && typeof expectedValue === "string") {
-        return actualValue.includes(expectedValue);
-      }
-      if (Array.isArray(actualValue)) {
-        return actualValue.includes(expectedValue);
-      }
-      return false;
-    case "NotContains":
-      if (typeof actualValue === "string" && typeof expectedValue === "string") {
-        return !actualValue.includes(expectedValue);
-      }
-      if (Array.isArray(actualValue)) {
-        return !actualValue.includes(expectedValue);
-      }
-      return true;
-    case "GreaterThan":
-      return Number(actualValue) > Number(expectedValue);
-    case "LessThan":
-      return Number(actualValue) < Number(expectedValue);
-    case "Exists":
-      return actualValue !== undefined && actualValue !== null;
-    case "NotExists":
-      return actualValue === undefined || actualValue === null;
-    default: {
-      const operator: never = condition.operator;
-      throw new Error(`Unsupported condition operator: ${operator as string}`);
-    }
-  }
-}
-
-function combineConditionResults(
-  accumulator: boolean,
-  nextResult: boolean,
-  logicGate: FlwConditionLogicGate,
-): boolean {
-  if (logicGate === "Or") {
-    return accumulator || nextResult;
-  }
-
-  return accumulator && nextResult;
-}
-
-function evaluateConditions(conditions: FlwConditions[], context: StepContext) {
-  if (conditions.length === 0) {
-    return { matched: true, evaluated: 0 };
-  }
-
-  const [firstCondition, ...restConditions] = conditions;
-  if (!firstCondition) {
-    return { matched: true, evaluated: 0 };
-  }
-
-  let matched = evaluateSingleCondition(firstCondition, context);
-
-  for (const condition of restConditions) {
-    matched = combineConditionResults(
-      matched,
-      evaluateSingleCondition(condition, context),
-      condition.logicGate,
-    );
-  }
-
-  return {
-    matched,
-    evaluated: conditions.length,
-  };
-}
-
 async function evaluateFlowConditions(flwId: string, context: StepContext) {
   const flowConditions = await prisma.flwConditions.findMany({
     where: {
@@ -439,100 +316,90 @@ async function stopExecutionByCondition(
         finishedAt: new Date(),
       },
     });
-  });
+  }, STEP_WRITE_TRANSACTION_OPTIONS);
 
-  console.log(`Execution ${step.flwExecutionId} stopped because ${details.scope} conditions were not met`);
+  log.info("Execution stopped by conditions", {
+    executionId: step.flwExecutionId,
+    stepExecutionId: step.id,
+    scope: details.scope,
+    evaluatedConditions: details.evaluated,
+  });
 }
 
 // ----------------------------------------------------------------
-// Branch evaluation – find next step with branching support
+// Branch evaluation – Prisma-backed reader for the traversal rules
 // ----------------------------------------------------------------
 
-async function findNextStep(
-  tx: Prisma.TransactionClient,
-  current: FlwSteps,
-  context: StepContext,
-): Promise<FlwSteps | null> {
-  // 1. Check if this step has child branches
-  const children = await tx.flwSteps.findMany({
-    where: { parentStepId: current.id },
-    orderBy: [{ branchIndex: "asc" }, { position: "asc" }],
-    include: {
-      FlwConditions: { orderBy: { position: "asc" } },
+/**
+ * Every query here is scoped to the current step's generation via `deletedAt`:
+ * null for the live definition, or the exact timestamp shared by all steps
+ * retired in one PATCH. An execution that started before a step replacement
+ * therefore runs to completion on the definition it began with, instead of
+ * falling off the end of a chain that no longer exists.
+ */
+function prismaStepReader(tx: Prisma.TransactionClient): StepReader {
+  return {
+    async findChildren(parent) {
+      const children = await tx.flwSteps.findMany({
+        where: { parentStepId: parent.id, deletedAt: parent.deletedAt },
+        orderBy: [{ branchIndex: "asc" }, { position: "asc" }],
+        include: {
+          FlwConditions: { orderBy: { position: "asc" } },
+        },
+      });
+
+      return children;
     },
-  });
 
-  if (children.length > 0) {
-    // Group children by branchIndex
-    const branches = new Map<number, typeof children>();
-    for (const child of children) {
-      const existing = branches.get(child.branchIndex);
-      if (existing) {
-        existing.push(child);
-      } else {
-        branches.set(child.branchIndex, [child]);
-      }
-    }
-
-    // Evaluate each branch – first matching wins (exclusive branching)
-    const sortedBranches = [...branches.entries()].sort((a, b) => a[0] - b[0]);
-    for (const [, branchSteps] of sortedBranches) {
-      const firstStep = branchSteps[0];
-      if (!firstStep) continue;
-
-      const conditions = firstStep.FlwConditions;
-      if (conditions.length === 0 || evaluateConditions(conditions, context).matched) {
-        return firstStep;
-      }
-    }
-
-    // No branch matched – skip past this branch point, continue at parent level
-    return findNextAfterStep(tx, current);
-  }
-
-  // 2. No child branches – find the next sibling in same branch
-  return findNextAfterStep(tx, current);
-}
-
-async function findNextAfterStep(
-  tx: Prisma.TransactionClient,
-  step: FlwSteps,
-): Promise<FlwSteps | null> {
-  // Find next sibling at the same level (same parentStepId + branchIndex)
-  const nextSibling = await tx.flwSteps.findFirst({
-    where: {
-      flwId: step.flwId,
-      parentStepId: step.parentStepId,
-      branchIndex: step.branchIndex,
-      position: { gt: step.position },
+    async findNextSibling(step) {
+      return tx.flwSteps.findFirst({
+        where: {
+          flwId: step.flwId,
+          parentStepId: step.parentStepId,
+          branchIndex: step.branchIndex,
+          position: { gt: step.position },
+          deletedAt: step.deletedAt,
+        },
+        orderBy: { position: "asc" },
+      });
     },
-    orderBy: { position: "asc" },
-  });
 
-  if (nextSibling) return nextSibling;
-
-  // If inside a branch, walk up to the parent and continue from there
-  if (step.parentStepId) {
-    const parentStep = await tx.flwSteps.findUnique({
-      where: { id: step.parentStepId },
-    });
-    if (parentStep) {
-      return findNextAfterStep(tx, parentStep);
-    }
-  }
-
-  // No more steps at any level
-  return null;
+    async findStepById(stepId) {
+      return tx.flwSteps.findUnique({ where: { id: stepId } });
+    },
+  };
 }
 
 async function onSuccessFunction(step: FlwExecutionSteps, outputPayload: unknown, context: StepContext): Promise<void> {
+  // `context` was built before this step ran, so it does not contain this
+  // step's own output. Branch conditions almost always key off the step
+  // immediately preceding the branch point, so resolve the next step against a
+  // context that includes it – otherwise those conditions always see undefined.
+  // This mirrors what buildStepContext will load from the DB on the next step.
+  const contextWithOutput: StepContext = {
+    triggerPayload: context.triggerPayload,
+    previousSteps: [
+      ...context.previousSteps,
+      { stepId: step.flwStepId, outputPayload },
+    ],
+  };
+
+  // Resolving the next step reads only immutable definition rows, so it runs
+  // outside the transaction. Traversal can take several round trips, and
+  // holding a transaction open across them risks blowing the timeout on a
+  // remote database for no gain in safety.
+  const current = await prisma.flwSteps.findUnique({ where: { id: step.flwStepId } });
+  if (!current) throw new Error(`Step definition not found for flwStepId: ${step.flwStepId}`);
+
+  const nextDefinition = await findNextStep(
+    prismaStepReader(prisma),
+    current,
+    contextWithOutput,
+  );
+
+  // What must be atomic: this step is never marked Success without its
+  // successor existing to carry the execution forward.
   const result = await prisma.$transaction(async (tx) => {
-    const current = await tx.flwSteps.findUnique({ where: { id: step.flwStepId } });
-    if (!current) throw new Error(`Step definition not found for flwStepId: ${step.flwStepId}`);
-
-    // Use branching-aware next step resolution
-    const nextDefinition = await findNextStep(tx, current, context);
-
     await tx.flwExecutionSteps.update({
       where: { id: step.id },
       data: {
@@ -564,15 +431,18 @@ async function onSuccessFunction(step: FlwExecutionSteps, outputPayload: unknown
     });
 
     return { nextStepExecutionId: null };
-  });
+  }, STEP_WRITE_TRANSACTION_OPTIONS);
 
   if (result.nextStepExecutionId) {
     await stepQueue.add("execute-step", { stepExecutionId: result.nextStepExecutionId });
-    console.log(`Next step enqueued – stepExecutionId: ${result.nextStepExecutionId}`);
+    log.debug("Next step enqueued", {
+      executionId: step.flwExecutionId,
+      stepExecutionId: result.nextStepExecutionId,
+    });
     return;
   }
 
-  console.log(`Execution ${step.flwExecutionId} completed successfully`);
+  log.info("Execution completed successfully", { executionId: step.flwExecutionId });
 }
 
 // ----------------------------------------------------------------
@@ -580,19 +450,34 @@ async function onSuccessFunction(step: FlwExecutionSteps, outputPayload: unknown
 // ----------------------------------------------------------------
 
 async function failureHandler(step: FlwExecutionSteps, err: unknown): Promise<void> {
-  const maxRetries = 5;
-  const baseDelay = 5_000;
-  const retryCount = step.retryCount + 1;
+  const maxRetries = config.STEP_MAX_RETRIES;
   const errorMessage = err instanceof Error ? err.message : String(err);
-  console.error(`Step ${step.id} failed with error:`, errorMessage);
+  const plan = planRetry(step.retryCount, {
+    maxRetries,
+    baseDelayMs: config.STEP_RETRY_BASE_DELAY_MS,
+  });
+  const retryCount = plan.retryCount;
 
-  if (retryCount > maxRetries) {
-    console.error(
-      `Step ${step.id} exceeded max retries (${maxRetries}) – marking failed. Error: ${errorMessage}`,
-    );
+  log.warn("Step failed", {
+    stepExecutionId: step.id,
+    executionId: step.flwExecutionId,
+    error: errorMessage,
+    retryCount,
+  });
 
-    await prisma.flwExecutionSteps.update({
-      where: { id: step.id },
+  if (plan.kind === "exhausted") {
+    log.error("Step exceeded max retries – marking failed", err, {
+      stepExecutionId: step.id,
+      executionId: step.flwExecutionId,
+      maxRetries,
+    });
+
+    // Guard on `Running`: processStep now routes *any* post-claim throw here,
+    // including one raised after the success transaction committed (e.g. the
+    // enqueue of the next step). Without the guard we would resurrect a step
+    // that already succeeded and re-run its side effects.
+    const marked = await prisma.flwExecutionSteps.updateMany({
+      where: { id: step.id, status: "Running" },
       data: {
         status: "Failed",
         error: errorMessage,
@@ -601,33 +486,46 @@ async function failureHandler(step: FlwExecutionSteps, err: unknown): Promise<vo
       },
     });
 
-    await prisma.flwExecutions.update({
-      where: { id: step.flwExecutionId },
+    if (marked.count === 0) {
+      log.warn("Step is no longer Running – not marking failed", {
+        stepExecutionId: step.id,
+        error: errorMessage,
+      });
+      return;
+    }
+
+    await prisma.flwExecutions.updateMany({
+      where: { id: step.flwExecutionId, status: { in: ["Pending", "Running"] } },
       data: { status: "Failed", finishedAt: new Date() },
     });
 
     return;
   }
 
-  // Use the incremented retryCount for the exponent so delay grows correctly:
-  // retry 1 → 10s, retry 2 → 20s, retry 3 → 40s, retry 4 → 80s, retry 5 → 160s
-  const delay = baseDelay * Math.pow(2, retryCount);
-  const nextRetryAt = new Date(Date.now() + delay);
+  const { delayMs: delay, nextRetryAt } = plan;
 
-  await prisma.flwExecutionSteps.update({
-    where: { id: step.id },
+  const rescheduled = await prisma.flwExecutionSteps.updateMany({
+    where: { id: step.id, status: "Running" },
     data: {
       status: "Pending",
       retryCount,
       nextRetryAt,
       error: errorMessage,
-      errorPayload: toJsonValue({ 
+      errorPayload: toJsonValue({
         message: errorMessage,
         retryCount,
         nextRetryAt: nextRetryAt.toISOString(),
       }),
     },
   });
+
+  if (rescheduled.count === 0) {
+    log.warn("Step is no longer Running – not scheduling a retry", {
+      stepExecutionId: step.id,
+      error: errorMessage,
+    });
+    return;
+  }
 
   // Re-enqueue with BullMQ delay so the step is picked up after backoff elapses.
   await stepQueue.add(
@@ -636,7 +534,11 @@ async function failureHandler(step: FlwExecutionSteps, err: unknown): Promise<vo
     { delay },
   );
 
-  console.log(
-    `Step ${step.id} retry ${retryCount}/${maxRetries} scheduled in ${delay / 1000}s`,
-  );
+  log.info("Step retry scheduled", {
+    stepExecutionId: step.id,
+    executionId: step.flwExecutionId,
+    retryCount,
+    maxRetries,
+    delayMs: delay,
+  });
 }

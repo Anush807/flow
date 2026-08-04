@@ -3,7 +3,7 @@
   "compilerOptions": {
     // File Layout
     "outDir": "./dist",
-    // "rootDir": ".",
+    "rootDir": ".",
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
@@ -40,5 +40,7 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "exclude": ["dist", "generated", "node_modules", "prisma.config.ts"]
+  // src/web is a self-contained Vite app with its own tsconfig/node_modules –
+  // it must not be pulled into the Node backend build.
+  "exclude": ["dist", "generated", "node_modules", "prisma.config.ts", "src/web"]
 }

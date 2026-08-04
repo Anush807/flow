@@ -3,6 +3,24 @@ import { createExecutionForFlow } from "../services/execution-service.js";
 import { prisma } from "../../lib/prisma.js";
 import { stepQueue } from "../async/redis-queue.js";
 
+// The trigger payload is persisted verbatim and echoed back by the executions
+// API, so credentials sent by the caller must not be stored with it.
+const SENSITIVE_HEADERS = new Set([
+  "authorization",
+  "proxy-authorization",
+  "cookie",
+  "set-cookie",
+  "x-api-key",
+]);
+
+function redactSensitiveHeaders(headers: Request["headers"]): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(headers).map(([name, value]) =>
+      SENSITIVE_HEADERS.has(name.toLowerCase()) ? [name, "[redacted]"] : [name, value],
+    ),
+  );
+}
+
 export async function webhookTriggerHandler(req: Request, res: Response): Promise<void> {
   const { webhookKey } = req.params as { webhookKey: string };
 
@@ -13,7 +31,7 @@ export async function webhookTriggerHandler(req: Request, res: Response): Promis
     },
     include: {
       FlwSteps: {
-        where: { parentStepId: null },
+        where: { parentStepId: null, deletedAt: null },
         orderBy: { position: "asc" },
         take: 1,
       },
@@ -32,7 +50,7 @@ export async function webhookTriggerHandler(req: Request, res: Response): Promis
   }
 
   const triggerPayload = {
-    headers: req.headers,
+    headers: redactSensitiveHeaders(req.headers),
     query: req.query,
     body: req.body,
     method: req.method,

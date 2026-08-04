@@ -2,6 +2,9 @@ import { Worker } from "bullmq";
 import { createExecutionForFlow } from "../services/execution-service.js";
 import { prisma } from "../../lib/prisma.js";
 import { stepQueue, redisConnection } from "../async/redis-queue.js";
+import { createLogger } from "../utils/logger.js";
+
+const log = createLogger("event-trigger");
 
 export type ExternalEventJob = {
   eventKey: string;
@@ -25,7 +28,7 @@ export const eventTriggerWorker = new Worker<ExternalEventJob>(
       },
       include: {
         FlwSteps: {
-          where: { parentStepId: null },
+          where: { parentStepId: null, deletedAt: null },
           orderBy: { position: "asc" },
           take: 1,
         },
@@ -35,7 +38,7 @@ export const eventTriggerWorker = new Worker<ExternalEventJob>(
     if (!workflow) {
       // Not an error – the event key may belong to an inactive or
       // deleted workflow. Log and discard.
-      console.warn(`external-event-trigger: no active workflow for eventKey "${eventKey}"`);
+      log.warn("No active workflow for eventKey – discarding", { eventKey });
       return;
     }
 
@@ -64,11 +67,13 @@ export const eventTriggerWorker = new Worker<ExternalEventJob>(
       await stepQueue.add("execute-step", { stepExecutionId: executionStep.id });
     }
 
-    console.log(
-      isDuplicate
-        ? `external-event-trigger: duplicate ignored for eventKey "${eventKey}" – executionId: ${execution.id}`
-        : `external-event-trigger: started execution for eventKey "${eventKey}" – stepExecutionId: ${executionStep?.id ?? "none"}`,
-    );
+    log.info(isDuplicate ? "Duplicate event ignored" : "Execution started from event", {
+      eventKey,
+      flwId: workflow.id,
+      executionId: execution.id,
+      stepExecutionId: executionStep?.id ?? null,
+      duplicate: isDuplicate,
+    });
   },
   {
     connection: redisConnection,
@@ -77,9 +82,9 @@ export const eventTriggerWorker = new Worker<ExternalEventJob>(
 );
 
 eventTriggerWorker.on("failed", (job, err) => {
-  console.error(`external-event-trigger job ${job?.id} failed:`, err);
+  log.error("Event trigger job failed", err, { jobId: job?.id });
 });
 
 eventTriggerWorker.on("error", (err) => {
-  console.error("external-event-trigger worker error:", err);
+  log.error("Event trigger worker error", err);
 });

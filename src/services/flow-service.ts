@@ -65,6 +65,81 @@ function normalizeSteps(
 }
 
 // ----------------------------------------------------------------
+// Condition source resolution
+// ----------------------------------------------------------------
+
+type StepIdsByPosition = Map<number, string>;
+
+/**
+ * Turns the caller-facing `sourceStepPosition` into the `sourceStepId` the
+ * worker actually reads. Without this every StepOutput-sourced condition was
+ * persisted with a null sourceStepId and silently evaluated against undefined.
+ *
+ * A position is resolved against the step's own level first (siblings sharing a
+ * parentStepId + branchIndex), then against the root level – which is how a
+ * branch condition refers back to the main-line step it hangs off.
+ */
+function resolveConditionSourceStepId(
+  condition: FlowConditionInput,
+  siblings: StepIdsByPosition,
+  rootSteps: StepIdsByPosition,
+): string | null {
+  if (condition.sourceType !== "StepOutput") {
+    return null;
+  }
+
+  const position = condition.sourceStepPosition;
+  if (position === undefined) {
+    throw new Error(
+      `Condition on field "${condition.fieldPath}" uses sourceType "StepOutput" but has no sourceStepPosition`,
+    );
+  }
+
+  const sourceStepId = siblings.get(position) ?? rootSteps.get(position);
+  if (!sourceStepId) {
+    throw new Error(
+      `Condition on field "${condition.fieldPath}" references sourceStepPosition ${position}, which matches no step in this flow`,
+    );
+  }
+
+  return sourceStepId;
+}
+
+function buildConditionRows(
+  flwId: string,
+  flwStepId: string | null,
+  conditions: FlowConditionInput[],
+  siblings: StepIdsByPosition,
+  rootSteps: StepIdsByPosition,
+) {
+  return conditions.map((condition, index) => ({
+    flwId,
+    flwStepId,
+    sourceType: condition.sourceType,
+    sourceStepId: resolveConditionSourceStepId(condition, siblings, rootSteps),
+    fieldPath: condition.fieldPath,
+    operator: condition.operator,
+    comparisonValue: toJsonValue(condition.comparisonValue),
+    logicGate: (condition.logicGate ?? "And") as "And" | "Or",
+    position: index + 1,
+  }));
+}
+
+function rootStepIdsByPosition(
+  createdSteps: Array<{ id: string; position: number; parentStepId: string | null }>,
+): StepIdsByPosition {
+  return new Map(
+    createdSteps
+      .filter((step) => step.parentStepId === null)
+      .map((step) => [step.position, step.id]),
+  );
+}
+
+// Step/condition writes fan out into many statements; the 5s Prisma default is
+// not enough headroom for a flow with a deep branch tree.
+const FLOW_WRITE_TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 };
+
+// ----------------------------------------------------------------
 // Recursive step + condition creation (supports branches)
 // ----------------------------------------------------------------
 
@@ -74,6 +149,7 @@ async function createStepsRecursive(
   steps: FlowStepInput[],
   parentStepId: string | null,
   branchIndex: number,
+  rootStepIdsByPosition?: StepIdsByPosition,
 ): Promise<Array<{ id: string; position: number; parentStepId: string | null; branchIndex: number }>> {
   // 1. Create step records at this level
   const stepData = steps.map((step, index) => ({
@@ -91,14 +167,24 @@ async function createStepsRecursive(
 
   await tx.flwSteps.createMany({ data: stepData });
 
-  // 2. Fetch created steps to get IDs
+  // 2. Fetch created steps to get IDs.
+  // `deletedAt: null` is load-bearing: superseded generations share the same
+  // (flwId, parentStepId, branchIndex) and would otherwise come back here and
+  // misalign this level against `steps`.
   const createdSteps = await tx.flwSteps.findMany({
-    where: { flwId, parentStepId, branchIndex },
+    where: { flwId, parentStepId, branchIndex, deletedAt: null },
     select: { id: true, position: true, parentStepId: true, branchIndex: true },
     orderBy: { position: "asc" },
   });
 
   const allCreated = [...createdSteps];
+
+  // Positions are only unique within a level, so conditions resolve against
+  // this level's siblings and fall back to the root level.
+  const siblingIdsByPosition: StepIdsByPosition = new Map(
+    createdSteps.map((created) => [created.position, created.id]),
+  );
+  const rootSteps = rootStepIdsByPosition ?? siblingIdsByPosition;
 
   // 3. Create conditions for each step + recurse into branches
   for (let i = 0; i < steps.length; i++) {
@@ -108,19 +194,15 @@ async function createStepsRecursive(
 
     // Create step-level conditions
     if (step.conditions && step.conditions.length > 0) {
-      const conditionRows = step.conditions.map((condition, ci) => ({
-        flwId,
-        flwStepId: created.id,
-        sourceType: condition.sourceType,
-        sourceStepId: null as string | null,
-        fieldPath: condition.fieldPath,
-        operator: condition.operator,
-        comparisonValue: toJsonValue(condition.comparisonValue),
-        logicGate: (condition.logicGate ?? "And") as "And" | "Or",
-        position: ci + 1,
-      }));
-
-      await tx.flwConditions.createMany({ data: conditionRows });
+      await tx.flwConditions.createMany({
+        data: buildConditionRows(
+          flwId,
+          created.id,
+          step.conditions,
+          siblingIdsByPosition,
+          rootSteps,
+        ),
+      });
     }
 
     // Recurse into branches
@@ -148,6 +230,7 @@ async function createStepsRecursive(
           branchSteps,
           created.id,
           bi,
+          rootSteps,
         );
         allCreated.push(...branchCreated);
       }
@@ -161,18 +244,22 @@ async function createStepsRecursive(
 // Include pattern for full flow queries (with branch nesting)
 // ----------------------------------------------------------------
 
+// Only the flow's current definition is rendered; superseded generations stay
+// in the table for historical executions but are not part of the flow's shape.
 function flowStepsInclude(): Prisma.FlwStepsInclude {
   return {
     FlwConditions: {
       orderBy: { position: "asc" },
     },
     childSteps: {
+      where: { deletedAt: null },
       orderBy: [{ branchIndex: "asc" }, { position: "asc" }],
       include: {
         FlwConditions: {
           orderBy: { position: "asc" },
         },
         childSteps: {
+          where: { deletedAt: null },
           orderBy: [{ branchIndex: "asc" }, { position: "asc" }],
           include: {
             FlwConditions: {
@@ -180,6 +267,7 @@ function flowStepsInclude(): Prisma.FlwStepsInclude {
             },
             // 3 levels of nesting should be sufficient
             childSteps: {
+              where: { deletedAt: null },
               orderBy: [{ branchIndex: "asc" }, { position: "asc" }],
               include: {
                 FlwConditions: {
@@ -193,6 +281,12 @@ function flowStepsInclude(): Prisma.FlwStepsInclude {
     },
   };
 }
+
+/** Root steps of the flow's current (non-superseded) definition. */
+const LIVE_ROOT_STEPS = {
+  where: { parentStepId: null, deletedAt: null },
+  orderBy: { position: "asc" },
+} as const;
 
 // ----------------------------------------------------------------
 // CRUD
@@ -213,38 +307,43 @@ export async function createFlowDefinition(input: {
     input.nodeType ? { type: input.nodeType, configPayload: input.configPayload } : undefined,
   );
 
-  const flw = await prisma.flw.create({
-    data: {
-      name: input.name,
-      ...(input.status !== undefined ? { status: input.status } : {}),
-      ...(input.eventKey !== undefined ? { eventKey: input.eventKey } : {}),
-      ...(input.webhookKey !== undefined ? { webhookKey: input.webhookKey } : {}),
+  // One transaction: a failure part-way through used to leave behind a flow
+  // with half its steps and no conditions.
+  const flw = await prisma.$transaction(
+    async (tx) => {
+      const created = await tx.flw.create({
+        data: {
+          name: input.name,
+          ...(input.status !== undefined ? { status: input.status } : {}),
+          ...(input.eventKey !== undefined ? { eventKey: input.eventKey } : {}),
+          ...(input.webhookKey !== undefined ? { webhookKey: input.webhookKey } : {}),
+        },
+      });
+
+      const createdSteps = await createStepsRecursive(tx, created.id, normalizedSteps, null, 0);
+
+      if (input.conditions && input.conditions.length > 0) {
+        await tx.flwConditions.createMany({
+          data: buildConditionRows(
+            created.id,
+            null,
+            input.conditions,
+            rootStepIdsByPosition(createdSteps),
+            rootStepIdsByPosition(createdSteps),
+          ),
+        });
+      }
+
+      return created;
     },
-  });
-
-  await createStepsRecursive(prisma, flw.id, normalizedSteps, null, 0);
-
-  if (input.conditions && input.conditions.length > 0) {
-    const flowConditionRows = input.conditions.map((condition, index) => ({
-      flwId: flw.id,
-      flwStepId: null as string | null,
-      sourceType: condition.sourceType,
-      sourceStepId: null as string | null,
-      fieldPath: condition.fieldPath,
-      operator: condition.operator,
-      comparisonValue: toJsonValue(condition.comparisonValue),
-      logicGate: (condition.logicGate ?? "And") as "And" | "Or",
-      position: index + 1,
-    }));
-    await prisma.flwConditions.createMany({ data: flowConditionRows });
-  }
+    FLOW_WRITE_TRANSACTION_OPTIONS,
+  );
 
   return prisma.flw.findUniqueOrThrow({
     where: { id: flw.id },
     include: {
       FlwSteps: {
-        where: { parentStepId: null },
-        orderBy: { position: "asc" },
+        ...LIVE_ROOT_STEPS,
         include: flowStepsInclude(),
       },
       FlwConditions: {
@@ -264,8 +363,7 @@ export async function getFlowDefinition(flwId: string) {
         orderBy: { position: "asc" },
       },
       FlwSteps: {
-        where: { parentStepId: null },
-        orderBy: { position: "asc" },
+        ...LIVE_ROOT_STEPS,
         include: flowStepsInclude(),
       },
       FlwExecutions: {
@@ -276,17 +374,17 @@ export async function getFlowDefinition(flwId: string) {
   });
 }
 
-export async function listFlowDefinitions() {
+export async function listFlowDefinitions(pagination?: { limit: number; offset: number }) {
   return prisma.flw.findMany({
     orderBy: { createdAt: "desc" },
+    ...(pagination ? { skip: pagination.offset, take: pagination.limit } : {}),
     include: {
       FlwConditions: {
         where: { flwStepId: null },
         orderBy: { position: "asc" },
       },
       FlwSteps: {
-        where: { parentStepId: null },
-        orderBy: { position: "asc" },
+        ...LIVE_ROOT_STEPS,
         include: flowStepsInclude(),
       },
       _count: {
@@ -294,6 +392,10 @@ export async function listFlowDefinitions() {
       },
     },
   });
+}
+
+export async function countFlowDefinitions() {
+  return prisma.flw.count();
 }
 
 export async function updateFlowDefinition(
@@ -313,52 +415,59 @@ export async function updateFlowDefinition(
   if (input.eventKey !== undefined) flowData.eventKey = input.eventKey;
   if (input.webhookKey !== undefined) flowData.webhookKey = input.webhookKey;
 
-  await prisma.flw.update({ where: { id: flwId }, data: flowData });
+  // One transaction, and step replacement is non-destructive: the previous
+  // definition is superseded (soft-deleted) rather than deleted, so every past
+  // execution still resolves the steps it actually ran. All steps retired by
+  // one call share a single `deletedAt`, and that timestamp is what identifies
+  // the generation an in-flight execution keeps traversing.
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.flw.update({ where: { id: flwId }, data: flowData });
 
-  if (input.steps) {
-  await prisma.flwExecutionSteps.deleteMany({
-    where: { FlwSteps: { flwId } },
-  });
-  await prisma.processedEvents.deleteMany({ where: { flwId } });
-  await prisma.flwExecutions.deleteMany({ where: { flwId } });
-  await prisma.flwConditions.deleteMany({ where: { flwId } });
-  await prisma.flwSteps.deleteMany({ where: { flwId, parentStepId: { not: null } } });
-  await prisma.flwSteps.deleteMany({ where: { flwId } });
+      if (input.steps) {
+        await tx.flwSteps.updateMany({
+          where: { flwId, deletedAt: null },
+          data: { deletedAt: new Date() },
+        });
 
-    const normalizedSteps = normalizeSteps(input.steps);
-    await createStepsRecursive(prisma, flwId, normalizedSteps, null, 0);
+        // Flow-level conditions belong to the flow, not to a step generation,
+        // so they are replaced. Step-level conditions stay attached to the
+        // superseded steps so historical runs remain explicable.
+        await tx.flwConditions.deleteMany({ where: { flwId, flwStepId: null } });
 
-    if (input.conditions && input.conditions.length > 0) {
-      const flowConditionRows = input.conditions.map((condition, index) => ({
-        flwId,
-        flwStepId: null as string | null,
-        sourceType: condition.sourceType,
-        sourceStepId: null as string | null,
-        fieldPath: condition.fieldPath,
-        operator: condition.operator,
-        comparisonValue: toJsonValue(condition.comparisonValue),
-        logicGate: (condition.logicGate ?? "And") as "And" | "Or",
-        position: index + 1,
-      }));
-      await prisma.flwConditions.createMany({ data: flowConditionRows });
-    }
-  } else if (input.conditions !== undefined) {
-    await prisma.flwConditions.deleteMany({ where: { flwId, flwStepId: null } });
-    if (input.conditions.length > 0) {
-      const flowConditionRows = input.conditions.map((condition, index) => ({
-        flwId,
-        flwStepId: null as string | null,
-        sourceType: condition.sourceType,
-        sourceStepId: null as string | null,
-        fieldPath: condition.fieldPath,
-        operator: condition.operator,
-        comparisonValue: toJsonValue(condition.comparisonValue),
-        logicGate: (condition.logicGate ?? "And") as "And" | "Or",
-        position: index + 1,
-      }));
-      await prisma.flwConditions.createMany({ data: flowConditionRows });
-    }
-  }
+        const normalizedSteps = normalizeSteps(input.steps);
+        const createdSteps = await createStepsRecursive(tx, flwId, normalizedSteps, null, 0);
+
+        if (input.conditions && input.conditions.length > 0) {
+          const rootSteps = rootStepIdsByPosition(createdSteps);
+          await tx.flwConditions.createMany({
+            data: buildConditionRows(flwId, null, input.conditions, rootSteps, rootSteps),
+          });
+        }
+
+        return;
+      }
+
+      if (input.conditions !== undefined) {
+        await tx.flwConditions.deleteMany({ where: { flwId, flwStepId: null } });
+
+        if (input.conditions.length > 0) {
+          // Steps are untouched here, so positions resolve against the steps
+          // already on record.
+          const existingRootSteps = await tx.flwSteps.findMany({
+            where: { flwId, parentStepId: null, deletedAt: null },
+            select: { id: true, position: true, parentStepId: true },
+          });
+          const rootSteps = rootStepIdsByPosition(existingRootSteps);
+
+          await tx.flwConditions.createMany({
+            data: buildConditionRows(flwId, null, input.conditions, rootSteps, rootSteps),
+          });
+        }
+      }
+    },
+    FLOW_WRITE_TRANSACTION_OPTIONS,
+  );
 
   return prisma.flw.findUniqueOrThrow({
     where: { id: flwId },
@@ -368,8 +477,7 @@ export async function updateFlowDefinition(
         orderBy: { position: "asc" },
       },
       FlwSteps: {
-        where: { parentStepId: null },
-        orderBy: { position: "asc" },
+        ...LIVE_ROOT_STEPS,
         include: flowStepsInclude(),
       },
     },
