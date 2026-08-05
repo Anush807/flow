@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface-dim: #020408;
+  --color-primary-fixed: #dbeafe;
+  --color-inverse-primary: #1d4ed8;
+  --color-on-tertiary-fixed-variant: #0369a1;
+  --color-tertiary: #38bdf8;
+  --color-tertiary-container: #0284c7;
+  --color-tertiary-fixed: #e0f2fe;
+  --color-primary: #3b82f6;
+  --color-on-primary: #ffffff;
+  --color-surface-tint: #3b82f6;
+  --color-error: #ef4444;
+  --color-on-secondary-container: #cbd5e1;
+  --color-on-tertiary: #0c4a6e;
+  --color-outline-variant: #334155;
+  --color-secondary-container: #1e293b;
+  --color-primary-fixed-dim: #93c5fd;
+  --color-on-secondary: #0f172a;
+  --color-on-tertiary-fixed: #082f49;
+  --color-on-surface-variant: #94a3b8;
+  --color-outline: #64748b;
+  --color-tertiary-fixed-dim: #7dd3fc;
+  --color-surface-variant: #1e293b;
+  --color-on-primary-container: #ffffff;
+  --color-primary-container: #2563eb;
+  --color-on-surface: #f8fafc;
+  --color-surface-container-highest: #1e293b;
+  --color-secondary-fixed: #f8fafc;
+  --color-on-error: #ffffff;
+  --color-on-primary-fixed-variant: #1e40af;
+  --color-secondary: #94a3b8;
+  --color-inverse-on-surface: #0f172a;
+  --color-surface-container-lowest: #04060a;
+  --color-on-secondary-fixed-variant: #334155;
+  --color-surface-container: #080b11;
+  --color-surface-container-high: #141a23;
+  --color-surface-bright: #1e293b;
+  --color-on-background: #f8fafc;
+  --color-surface: #080b11;
+  --color-error-container: #7f1d1d;
+  --color-background: #020408;
+  --color-secondary-fixed-dim: #cbd5e1;
+  --color-on-secondary-fixed: #020617;
+  --color-on-error-container: #fecaca;
+  --color-on-primary-fixed: #1e3a8a;
+  --color-surface-container-low: #05070c;
+  --color-inverse-surface: #f8fafc;
+  --color-on-tertiary-container: #e0f2fe;
+
+  --spacing-sidebar-width: 256px;
+  --spacing-element-gap: 12px;
+  --spacing-container-padding: 24px;
+  --spacing-stack-gap: 8px;
+  --spacing-gutter: 16px;
+
+  --font-section-heading: Geist, sans-serif;
+  --font-badge-text: Geist, sans-serif;
+  --font-stat-number: Geist, sans-serif;
+  --font-body-base: Geist, sans-serif;
+  --font-code-block: 'JetBrains Mono', monospace;
+  --font-label-nav: Geist, sans-serif;
+  --font-card-title: Geist, sans-serif;
+  --font-page-title: Geist, sans-serif;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #020408;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Custom design system utility classes */
+.json-block {
+  background-color: #04070d;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.level-1-surface {
+  background-color: #080b11;
+  border: 1px solid #1e293b;
+}
+
+.input-base {
+  background-color: #04070d;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  color: #f8fafc;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  padding: 8px 12px;
+  width: 100%;
+  font-family: Geist, sans-serif;
+  font-size: 14px;
+}
+
+.input-base:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+}
+
+.label-base {
+  display: block;
+  color: #94a3b8;
+  font-family: Geist, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

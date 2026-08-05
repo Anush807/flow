@@ -58,6 +58,34 @@ Branches can be nested (branches within branches) up to 3 levels deep.
 - Event trigger worker: `src/triggers/events.ts` (started by the step worker – it has no process of its own)
 - Recovery service: `src/recovery/recovery.ts`
 - Prisma schema: `prisma/schema.prisma`
+- Web console: `src/web/ui` (Vite + React), served by the API process
+- Console API: `src/routes/console.ts` (mounted at `/api`)
+
+## Web console
+
+A browser UI over the same engine: flows and their steps, executions with per-step
+payloads and errors, dry runs, real triggers, re-runs, live queue depth.
+
+```bash
+npm run install:ui     # once
+npm run dev            # API
+npm run dev:worker     # nothing executes without this
+npm run dev:ui         # console on http://localhost:5173, proxying /api to the API
+```
+
+For production, build it and let the API serve it on the same origin:
+
+```bash
+npm run build:ui       # -> src/web/ui/dist
+npm start              # picks the bundle up automatically
+```
+
+The Docker image builds and ships it too (into `/app/public`); point elsewhere with
+`CONSOLE_DIST_DIR`.
+
+The console has no session system of its own — it asks for the management `API_KEY`
+on first load, keeps it in the browser's localStorage and sends it as `x-api-key`.
+Serve it from the same origin as the API and treat that browser as trusted.
 
 ## Authentication
 
@@ -106,6 +134,9 @@ RATE_LIMIT_MANAGEMENT_MAX=120
 RATE_LIMIT_INGRESS_MAX=600
 
 LOG_LEVEL=info
+
+# Built web console. Unset means "look in src/web/ui/dist, then ./public".
+CONSOLE_DIST_DIR=
 ```
 
 Config is validated by zod at startup (`src/config.ts`); a bad value fails the boot with a precise message instead of surfacing later inside a step handler.
@@ -139,7 +170,8 @@ npm run dev:recovery
 Or all of them at once:
 
 ```bash
-npm run dev:all
+npm run dev:all       # API + worker + recovery
+npm run dev:console   # the same three, plus the web console
 ```
 
 ## Tests

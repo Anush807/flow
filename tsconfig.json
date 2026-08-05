@@ -8,11 +8,9 @@
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
     "target": "esnext",
-    "types": [],
-    // For nodejs:
-    // "lib": ["esnext"],
+    // Node only – a duplicate "types" key used to shadow this one, which
+    // esbuild flags on every console build.
     "types": ["node"],
-    // and npm install -D @types/node
 
     // Other Outputs
     "sourceMap": true,
@@ -40,7 +38,7 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  // src/web is a self-contained Vite app with its own tsconfig/node_modules –
-  // it must not be pulled into the Node backend build.
+  // src/web/ui is the console: a self-contained Vite app with its own tsconfig
+  // and node_modules, and it must not be pulled into the Node backend build.
   "exclude": ["dist", "generated", "node_modules", "prisma.config.ts", "src/web"]
 }

@@ -1,6 +1,0 @@
-{
-  "name": "FlowEngine",
-  "description": "An advanced automation and workflow engine with a high-contrast dark visual layout, real-time trigger simulation, bento metrics dashboard, and logic execution step builder.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

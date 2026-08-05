@@ -41,6 +41,10 @@ const envSchema = z
 
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 
+    // Built web console. Unset means "look in the default locations" – see
+    // src/routes/console-static.ts.
+    CONSOLE_DIST_DIR: z.string().optional(),
+
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: intFromEnv(587),
     SMTP_SECURE: z

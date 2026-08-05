@@ -49,8 +49,10 @@ enum FlwConditionLogicGate{
 }
 
 model Flw{
-  id                          String @id @default(uuid())        
+  id                          String @id @default(uuid())
   name                        String
+  /// Free-text summary shown in the console. Nothing in the engine reads it.
+  description                 String?
   eventKey                    String?   @unique
   webhookKey                  String? @unique  
   FlwSteps                    FlwSteps[]
@@ -59,6 +61,8 @@ model Flw{
   ProcessedEvents             ProcessedEvents[]
   status                      FlwStatus @default(Draft)
   createdAt                   DateTime   @default(now())
+  /// Touched by every definition edit – the console sorts and labels on it.
+  updatedAt                   DateTime   @default(now()) @updatedAt
 }
 
 model FlwSteps{

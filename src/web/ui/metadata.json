@@ -1,0 +1,6 @@
+{
+  "name": "FlowEngine",
+  "description": "High-performance workflow automation platform control deck for managing flows, execution steps, and live event triggers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

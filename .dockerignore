@@ -11,8 +11,9 @@ generated
 .env.*
 !.env.example
 
-# The Vite prototype renders mock data and is not part of the backend build.
-src/web
+# The console's own dependency tree and previous build are rebuilt in the
+# `console` stage; its sources are part of the context.
+src/web/ui/dist
 
 .claude
 .codex

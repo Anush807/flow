@@ -2,6 +2,8 @@ import dns from "node:dns";
 import express from "express";
 import { config, isProduction } from "./config.js";
 import creatFlw from "./api.js";
+import consoleRouter from "./routes/console.js";
+import { mountConsoleStatic } from "./routes/console-static.js";
 import healthRouter from "./routes/health.js";
 import { requireApiKey } from "./middleware/auth.js";
 import { ingressRateLimit, managementRateLimit } from "./middleware/rate-limit.js";
@@ -50,6 +52,14 @@ app.post("/webhooks/:webhookKey", ingressRateLimit, (req, res, next) => {
 
 // Everything under /flow is the management API.
 app.use("/flow", managementRateLimit, requireApiKey, creatFlw);
+
+// The web console's own API. Same credential, same limits – it is the same
+// management surface, shaped for a browser.
+app.use("/api", managementRateLimit, requireApiKey, consoleRouter);
+
+// The console bundle itself, if it has been built. Last, so it can never
+// shadow an API route.
+mountConsoleStatic(app);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not Found", path: req.originalUrl });

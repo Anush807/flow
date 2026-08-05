@@ -54,6 +54,7 @@ export const flowStepSchema = z.object({
 export const createFlowSchema = z
   .object({
     name: z.string().min(1),
+    description: z.string().nullable().optional(),
     status: flowStatusSchema.optional(),
     eventKey: z.string().min(1).optional(),
     webhookKey: z.string().min(1).optional(),
@@ -74,6 +75,7 @@ export const createFlowSchema = z
 export const updateFlowSchema = z
   .object({
     name: z.string().min(1).optional(),
+    description: z.string().nullable().optional(),
     status: flowStatusSchema.optional(),
     eventKey: z.string().min(1).nullable().optional(),
     webhookKey: z.string().min(1).nullable().optional(),
@@ -83,6 +85,7 @@ export const updateFlowSchema = z
   .refine(
     (value) =>
       value.name !== undefined ||
+      value.description !== undefined ||
       value.status !== undefined ||
       value.eventKey !== undefined ||
       value.webhookKey !== undefined ||
@@ -113,4 +116,69 @@ export const MAX_PAGE_SIZE = 100;
 export const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(25),
   offset: z.coerce.number().int().min(0).default(0),
+});
+
+// ---------------------------------------------------------------------------
+// Web console (`/api`)
+//
+// The console edits payloads in textareas, so its steps carry JSON *strings*
+// where the management API takes objects. The strings are parsed (and blamed by
+// step number) in `console-view.toFlowStepInputs`, not here.
+// ---------------------------------------------------------------------------
+
+const consoleFlowStatusSchema = z.enum(["draft", "active", "paused", "archived"]);
+
+export const consoleStepSchema = z.object({
+  name: z.string().optional(),
+  type: z.enum(["Trigger", "Action"]).default("Action"),
+  integrationKey: z.string().min(1, "integrationKey is required"),
+  operationKey: z.string().optional(),
+  configPayload: z.string().optional(),
+  inputMapping: z.string().optional(),
+});
+
+export const consoleCreateFlowSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+  status: consoleFlowStatusSchema.optional(),
+  eventKey: z.string().optional(),
+  webhookKey: z.string().optional(),
+  steps: z.array(consoleStepSchema).min(1, "A flow needs at least one step"),
+});
+
+export const consoleUpdateFlowSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    description: z.string().optional(),
+    status: consoleFlowStatusSchema.optional(),
+    eventKey: z.string().optional(),
+    webhookKey: z.string().optional(),
+    steps: z.array(consoleStepSchema).min(1).optional(),
+  })
+  .refine((value) => Object.values(value).some((field) => field !== undefined), {
+    message: "At least one field must be provided for update",
+  });
+
+export const consoleFlowQuerySchema = z.object({
+  search: z.string().optional(),
+  status: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export const consoleExecutionQuerySchema = z.object({
+  flowId: z.string().optional(),
+  status: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(25),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+/**
+ * The test and emit modals both post a raw JSON document typed by the operator.
+ * An unparseable payload is a 400 with a readable message rather than a run
+ * triggered with a string where the flow expects an object.
+ */
+export const consolePayloadSchema = z.object({
+  payload: z.string().optional(),
+  idempotencyKey: z.string().min(1).optional(),
 });

@@ -294,6 +294,7 @@ const LIVE_ROOT_STEPS = {
 
 export async function createFlowDefinition(input: {
   name: string;
+  description?: string | null | undefined;
   steps?: FlowStepInput[] | undefined;
   nodeType?: "Trigger" | "Action" | undefined;
   status?: "Draft" | "Active" | "Paused" | "Archived" | undefined;
@@ -314,6 +315,7 @@ export async function createFlowDefinition(input: {
       const created = await tx.flw.create({
         data: {
           name: input.name,
+          ...(input.description !== undefined ? { description: input.description } : {}),
           ...(input.status !== undefined ? { status: input.status } : {}),
           ...(input.eventKey !== undefined ? { eventKey: input.eventKey } : {}),
           ...(input.webhookKey !== undefined ? { webhookKey: input.webhookKey } : {}),
@@ -398,10 +400,58 @@ export async function countFlowDefinitions() {
   return prisma.flw.count();
 }
 
+/**
+ * Hard-deletes a flow and everything that hangs off it.
+ *
+ * Every other write in this file is non-destructive on purpose, so this one is
+ * deliberately narrow: a flow with an execution still Pending or Running is
+ * refused, because the step worker holds job references to rows that would
+ * vanish underneath it. Finished history is removed with the flow – it is
+ * meaningless once the definition it describes is gone, and `Flw` is the parent
+ * of every FK involved.
+ *
+ * Archiving (`PATCH { status: "Archived" }`) is the non-destructive option and
+ * is what the console offers alongside this.
+ */
+export async function deleteFlowDefinition(flwId: string) {
+  const flow = await prisma.flw.findUnique({ where: { id: flwId }, select: { id: true, name: true } });
+
+  if (!flow) {
+    throw new Error(`Flow not found: ${flwId}`);
+  }
+
+  const inFlight = await prisma.flwExecutions.count({
+    where: { flwId, status: { in: ["Pending", "Running"] } },
+  });
+
+  if (inFlight > 0) {
+    throw new Error(
+      `Flow has ${inFlight} execution(s) still in flight – wait for them to settle before deleting`,
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.processedEvents.deleteMany({ where: { flwId } });
+    await tx.flwExecutionSteps.deleteMany({ where: { FlwExecutions: { flwId } } });
+    await tx.flwExecutions.deleteMany({ where: { flwId } });
+    await tx.flwConditions.deleteMany({ where: { flwId } });
+
+    // Steps are a self-relation: children reference their parent, so the FK has
+    // to be broken before the rows can go in one statement.
+    await tx.flwSteps.updateMany({ where: { flwId }, data: { parentStepId: null } });
+    await tx.flwSteps.deleteMany({ where: { flwId } });
+
+    await tx.flw.delete({ where: { id: flwId } });
+  }, FLOW_WRITE_TRANSACTION_OPTIONS);
+
+  return flow;
+}
+
 export async function updateFlowDefinition(
   flwId: string,
   input: {
     name?: string | undefined;
+    description?: string | null | undefined;
     status?: "Draft" | "Active" | "Paused" | "Archived" | undefined;
     eventKey?: string | null | undefined;
     webhookKey?: string | null | undefined;
@@ -411,6 +461,7 @@ export async function updateFlowDefinition(
 ) {
   const flowData: Prisma.FlwUpdateInput = {};
   if (input.name !== undefined) flowData.name = input.name;
+  if (input.description !== undefined) flowData.description = input.description;
   if (input.status !== undefined) flowData.status = input.status;
   if (input.eventKey !== undefined) flowData.eventKey = input.eventKey;
   if (input.webhookKey !== undefined) flowData.webhookKey = input.webhookKey;

@@ -1,5 +1,4 @@
 import express from "express";
-import { ZodError } from "zod";
 import {
   createFlowSchema,
   emitEventSchema,
@@ -17,6 +16,7 @@ import {
 import {
   countFlowDefinitions,
   createFlowDefinition,
+  deleteFlowDefinition,
   getFlowDefinition,
   listFlowDefinitions,
   updateFlowDefinition,
@@ -24,45 +24,11 @@ import {
 import { testFlowExecution } from "./services/test-services.js";
 import { webhookTriggerHandler } from "./triggers/webhook.js";
 import { ingressRateLimit } from "./middleware/rate-limit.js";
+import { errorResponse } from "./utils/error-response.js";
 import { createLogger } from "./utils/logger.js";
 
 const log = createLogger("api");
 const router = express.Router();
-
-/**
- * Maps a thrown error onto a status code. Previously every failure in this
- * router collapsed to 400 (or 500), so callers could not tell a bad request
- * from a missing flow from a genuine server fault.
- */
-function errorResponse(res: express.Response, message: string, error: unknown) {
-  if (error instanceof ZodError) {
-    return res.status(400).json({
-      message,
-      error: "Validation failed",
-      issues: error.issues.map((issue) => ({
-        path: issue.path.join("."),
-        message: issue.message,
-      })),
-    });
-  }
-
-  const detail = error instanceof Error ? error.message : String(error);
-
-  if (/not found/i.test(detail)) {
-    return res.status(404).json({ message, error: detail });
-  }
-
-  if (/not active|has no steps|at least one step/i.test(detail)) {
-    return res.status(409).json({ message, error: detail });
-  }
-
-  if (/sourceStepPosition|required|must be/i.test(detail)) {
-    return res.status(400).json({ message, error: detail });
-  }
-
-  log.error(message, error);
-  return res.status(500).json({ message, error: detail });
-}
 
 router.post("/:id/test", async (req, res) => {
   const flwId = String(req.params.id);
@@ -83,6 +49,7 @@ async function createFlowHandler(req: express.Request, res: express.Response) {
     const payload = createFlowSchema.parse(req.body);
     const flow = await createFlowDefinition({
       name: payload.name,
+      ...(payload.description !== undefined ? { description: payload.description } : {}),
       ...(payload.status ? { status: payload.status } : {}),
       ...(payload.eventKey ? { eventKey: payload.eventKey } : {}),
       ...(payload.webhookKey ? { webhookKey: payload.webhookKey } : {}),
@@ -154,6 +121,7 @@ router.patch("/:id", async (req, res) => {
     const payload = updateFlowSchema.parse(req.body);
     const flow = await updateFlowDefinition(flwId, {
       ...(payload.name !== undefined ? { name: payload.name } : {}),
+      ...(payload.description !== undefined ? { description: payload.description } : {}),
       ...(payload.status !== undefined ? { status: payload.status } : {}),
       ...(payload.eventKey !== undefined ? { eventKey: payload.eventKey } : {}),
       ...(payload.webhookKey !== undefined ? { webhookKey: payload.webhookKey } : {}),
@@ -169,6 +137,23 @@ router.patch("/:id", async (req, res) => {
     });
   } catch (error) {
     return errorResponse(res, "Failed to update flow", error);
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const flwId = String(req.params.id);
+
+  try {
+    const flow = await deleteFlowDefinition(flwId);
+
+    log.warn("Flow deleted", { flwId, name: flow.name });
+
+    return res.json({
+      message: "Flow deleted successfully",
+      data: { id: flow.id, name: flow.name },
+    });
+  } catch (error) {
+    return errorResponse(res, "Failed to delete flow", error);
   }
 });
 

@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The management API sits behind a static API key; webhook ingress is public by design. Three processes make up a deployment: the API (`src/index.ts`), the step worker (`src/async/worker.ts`, which also hosts the event-trigger worker), and the recovery loop (`src/recovery/recovery.ts`).
 
+A web console lives in `src/web/ui` (Vite + React). It is not a fourth process: it is a static bundle the API process serves, talking to a console-shaped API at `/api` behind the same key.
+
 ## Commands
 
 ```bash
@@ -20,6 +22,11 @@ npm run dev:all              # all three of the above via concurrently
 npm test                     # node:test via tsx
 npm run typecheck            # tsc --noEmit, includes *.test.ts
 npm run build                # tsc -p tsconfig.build.json (excludes tests)
+
+npm run install:ui           # dependencies for the console (separate tree)
+npm run dev:ui               # console dev server on :5173, proxying /api to the API
+npm run dev:console          # dev:all + the console
+npm run build:ui             # -> src/web/ui/dist, which the API process then serves
 ```
 
 Prisma migrations are applied with `npx prisma migrate deploy` / `dev`; `prisma.config.ts` supplies `DATABASE_URL` (the `datasource db` block in `schema.prisma` deliberately has no `url`).
@@ -124,11 +131,32 @@ Everything under `/flow` requires the management API key (`Authorization: Bearer
 | `POST /flow/events/:eventKey/emit` | enqueues to `external-event-trigger`, returns 202 |
 | `GET /flow/:id/executions` | paginated, returns `{ data, pagination: { limit, offset, total } }` |
 | `GET /flow/executions/:executionId` · `GET /flow/dashboard/summary` | |
+| `DELETE /flow/:id` | **destructive** — see `deleteFlowDefinition` below |
 | `POST /webhooks/:webhookKey` (in `src/index.ts`) · `POST /flow/webhook/:webhookKey` | **public**, rate limited per webhook key + IP |
 
 `PATCH /flow/:id` **with `steps`** replaces the definition non-destructively: the previous steps are superseded (see "Definition generations") and executions, execution steps and processed events are all preserved. Flow-level conditions are replaced; step-level conditions stay attached to the superseded steps.
 
-Errors map through `errorResponse` in `src/api.ts` — 400 for validation (with an `issues` array), 404 for missing, 409 for inactive/no-steps, 500 otherwise.
+`deleteFlowDefinition` is the one destructive write in the codebase: it removes the flow, its steps, conditions, executions, execution steps and processed events in a single transaction. It **refuses** a flow with an execution still `Pending`/`Running`, because the worker holds job references to rows that would vanish. Archiving (`status: "Archived"`) is the non-destructive alternative and is what the console offers alongside it.
+
+Errors map through `errorResponse` in `src/utils/error-response.ts`, shared by both routers — 400 for validation (with an `issues` array), 404 for missing, 409 for inactive/no-steps/in-flight and for a Prisma `P2002` on `eventKey`/`webhookKey`, 500 otherwise.
+
+### Console API (`src/routes/console.ts`, mounted at `/api`)
+
+The web console's own surface, behind the same API key and rate limit. It is a *second face on the same services* — every write goes through `flow-service` / `execution-service` — that shapes responses for a browser: lowercase statuses, relative timestamps, payloads as JSON **strings** (the console edits them in textareas), everything enveloped as `{ data, pagination? }`.
+
+| Route | Notes |
+|---|---|
+| `GET /api/stats` · `GET /api/settings` · `GET /api/integrations` | settings is non-secret config + live queue depth (degrades to `queue: null` if Redis is slow); integrations lists the registry keys |
+| `GET /api/flows` | `?search=&status=&limit=&offset=`; `status=failing` is derived, not a column, so it filters after mapping |
+| `GET/POST /api/flows` · `PUT /api/flows/:id` · `DELETE /api/flows/:id` | PUT (not PATCH) because the console submits the whole form |
+| `POST /api/flows/:id/test` · `POST /api/flows/:id/emit` | dry run vs. real execution |
+| `GET /api/executions` · `GET /api/executions/:id` · `POST /api/executions/:id/rerun` | rerun replays the original trigger payload as a **new** execution against the current definition |
+
+Two supporting modules: `src/services/console-view.ts` is pure (formatting, status mapping, step ordering, JSON-text parsing) and unit tested; `src/services/console-service.ts` holds the console-only Prisma queries. Keep mapping logic on the pure side.
+
+There is no session system: the console asks the operator for the management key on first load, keeps it in `localStorage`, and sends it as `x-api-key` (`src/web/ui/src/store/useAuthStore.ts`). A dev server booted without `API_KEY` accepts everything and the prompt never appears.
+
+The bundle itself is served by `mountConsoleStatic` (`src/routes/console-static.ts`) from `src/web/ui/dist`, `./public`, or `CONSOLE_DIST_DIR`. It is mounted after the API routers, and its history fallback deliberately skips `/api`, `/flow`, `/webhooks`, `/health` and `/ready` so an API typo stays a JSON 404.
 
 ## Conventions
 
@@ -145,5 +173,5 @@ Errors map through `errorResponse` in `src/api.ts` — 400 for validation (with 
 
 Do not trust these; fix them if the task touches them.
 
-- `src/web/` is a self-contained AI-Studio-generated React/Vite prototype with its own `package.json` and `node_modules`. It renders **mock data from `src/web/src/data.ts`** and makes no calls to this backend. Its README is Google boilerplate. It is excluded from the root `tsconfig.json` and is not part of `npm run build`.
+- `src/web/ui/` is the console and has its own `package.json`, `node_modules` and `tsconfig.json`. It is excluded from the root `tsconfig.json` and from `npm run build`; check it with `npm --prefix src/web/ui run lint`. (The mock-data prototype that used to sit in `src/web/` has been deleted.)
 - The `FlwDataRecord` model exists in `schema.prisma` and has a migration, but nothing in the codebase reads or writes it.

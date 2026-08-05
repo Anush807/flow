@@ -41,6 +41,22 @@ RUN npm run build
 
 
 # ---------------------------------------------------------------------------
+# console – the web UI bundle.
+#
+# Its own dependency tree, kept out of the backend's: nothing in `src/web/ui`
+# runs in Node at runtime, only the static output ships.
+# ---------------------------------------------------------------------------
+FROM node:${NODE_VERSION} AS console
+
+WORKDIR /app/ui
+COPY src/web/ui/package.json src/web/ui/package-lock.json ./
+RUN npm ci
+
+COPY src/web/ui ./
+RUN npm run build
+
+
+# ---------------------------------------------------------------------------
 # prod-deps – runtime dependency tree only.
 #
 # --ignore-scripts because the only postinstall that matters here is Prisma's,
@@ -106,6 +122,11 @@ ENV PORT=3000
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json ./
+
+# The console bundle. The API process picks it up from ./public and serves it
+# on the same origin as /api; the worker and recovery containers simply ignore
+# it. Override the location with CONSOLE_DIST_DIR.
+COPY --from=console /app/ui/dist ./public
 
 # Drop privileges. `node` (uid 1000) ships with the base image.
 USER node
